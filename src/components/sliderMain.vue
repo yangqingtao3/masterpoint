@@ -1996,7 +1996,7 @@ export default {
       //     ctx.lineWidth="0";
 
       canvas.on("after:render", function() {
-        cutImageMaskFunc();
+        cutImageMaskFunc();//剪切
       });
 
       canvas.on("mouse:down", function(opt) {
