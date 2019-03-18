@@ -1,0 +1,1948 @@
+<template>
+    <div class="sh-point">
+    	<div class="sh-top"></div>
+    	<div class="sh-bottom">
+    		<div class="sh-left"></div>
+    		<div class="sh-mid">
+    			<canvas id="pointCanvas"></canvas>
+    			<transition name="fade">
+	    			<div @scroll="pointScrollX"  v-show="showsSroll==true" class="sh-mid-scroll sh-mid-scrollx">
+	    				<div :style="{width:scrollWidth + 'px' }"></div>
+	    			</div>
+	    		</transition>
+	    		<transition name="fade">
+	    			<div @scroll="pointScrollY"  v-show="showsSroll==true" class="sh-mid-scroll sh-mid-scrolly" >
+	    				<div :style="{height:scrollHeight+ 'px'}"></div>
+	    			</div>
+	    		</transition>
+	    		<div class="horizon-guide-trigger" title="水平辅助线" @mousedown="createGuide('h', $event)"></div>
+	    		<div class="vertical-guide-trigger" title="垂直辅助线" @mousedown="createGuide('v', $event)"></div>
+
+	    		<div v-if="guideType=='h'" :style="{top: guidePos+'px'}" class="horizon-guide-line"></div>
+	    		<div v-if="guideType=='v'" :style="{left: guidePos+'px'}" class="vertical-guide-line"></div>
+
+    		</div>
+    		<div class="sh-right">{{logtxt}}</div>
+    	</div>
+    </div>
+</template>
+
+
+<script>
+
+  import $$ from 'jquery'
+
+  export default {
+    data: () => ({
+      //可滚动的宽度 = 2*pointCanvasParentW + viewCanvasWidth - Math.min(2*showMin, viewCanvasWidth)
+      scrollWidth: 1, 
+      //可滚动的宽度 = 2*pointCanvasParentH + viewCanvasHeight - Math.min(2*showMin, viewCanvasHeight)
+      scrollHeight:1, //可滚动的高度
+
+      curScrollX:0, //目前滚动条X位置
+      curScrollY:0, //目前滚动条Y位置
+      curzoom:null, //全局缩放比例
+      
+      viewCanvasWidth:375, //画布的宽度，画布为视区中的有效制作区域
+      viewCanvasHeight:667, //画布的高度
+
+      showviewportBorder:null, //画布框
+      showviewport:null, //画布裁剪
+
+      pointCanvasParentW:null, //视区宽度
+      pointCanvasParentH:null, //视区高度
+
+      pointCanvas:null, //视区canvas实例
+
+      showMin:100, //最小显示的方形面积
+
+      objScrollX:null,
+      objScrollY:null,
+
+      showsSroll: true,
+      showsSrollLag:null,
+      resetObjectPositionLag:null,
+
+
+
+      logtxt:"", 
+
+      spaceKeyDown:false,
+      isWheelScaleState:null,
+      editorMode:false,
+      //辅助线相关设置
+      canvasWidthCenterMap:{},
+      canvasHeightCenterMap:{},
+
+      axisOn:true, //刻度显示选项
+      matrixOn:true,//网格线显示
+      matrixColor:"#000", //网格线颜色
+      matrixBorderStyle:[], //网格线边框样式设置
+      martixAttach:true, //是否吸附网格线
+
+      
+
+      guideType:null,
+      guidePos:null,
+
+
+      // currentObjectOpacity:1
+    }),
+    mounted: function(){
+    	var _this= this;
+    	var $pc = document.querySelector("#pointCanvas");
+    	var $parent = $pc.parentElement;
+    	$pc.height = this.pointCanvasParentH = $parent.clientHeight;
+    	$pc.width = this.pointCanvasParentW = $parent.clientWidth;
+
+    	var canvas = new fabric.Canvas('pointCanvas',{
+    		preserveObjectStacking :true,
+    		centeredKey :"shiftKey",
+    		stopContextMenu: true,
+    		uniScaleKey :"ctrlKey",
+    		stateful:true,
+    		renderOnAddRemove: false
+    	});
+
+    	// canvas.on("mouse:move", function(opt){ 
+    		
+
+
+     //        _this.logtxt = "port:"+isContainedport+", border:" + isContainedborder + ", x:" + opt.e.offsetX + ",y:" + opt.e.offsetY + ", absolute:" +JSON.stringify(_this.showviewport.getBoundingRect(true, true))+ ", relative:" +JSON.stringify(_this.showviewport.getBoundingRect(false, true)) + ", center:"+JSON.stringify(center);
+
+    	// 	//console.log("isContained", isContained);
+    	// });
+
+    	$$(document).on("keydown.msmain", function(e){
+    		if(!_this.editorMode){	
+	    		if (e.keyCode == 32) {
+	    			_this.spaceKeyDown = true;
+	    			canvas.defaultCursor = "move";
+	    			_this.showsSroll = false;
+	    			_this.banCanvasInteract();
+	    		}
+
+	    		if(e.altKey){
+	    			_this.banCanvasInteract();
+	    		}
+
+	    		e.preventDefault();
+				e.stopPropagation();
+			}
+    	});
+
+    	$$(document).on("keyup.msmain", function(e){
+    		if(!_this.editorMode){	
+	    		if(_this.spaceKeyDown){
+	    			_this.spaceKeyDown = false;
+	    			canvas.defaultCursor = "default";
+	    			_this.initialCanvasShow();
+	    			_this.banCanvasInteract(true);
+				    _this.showsSroll = true;
+
+				    canvas.forEachObject(function(obj) {
+				    	obj.setCoords();
+				    });
+	    		}
+
+	    		if(_this.isWheelScaleState=="point"){
+	    			_this.initialCanvasShow();
+					_this.showsSroll = true;
+					_this.banCanvasInteract(true);
+	    		}
+	    		else if (_this.isWheelScaleState=="center"){
+	    			_this.initialCanvasShow((_this.scrollWidth - _this.pointCanvasParentW)/2, (_this.scrollHeight - _this.pointCanvasParentH)/2);
+				  	_this.showsSroll = true;
+				  	_this.banCanvasInteract(true);
+	    		}
+
+	    		if(e.altKey){
+	    			_this.banCanvasInteract(true);
+	    		}
+
+	    		_this.isWheelScaleState = null;
+	    		
+
+	    		e.preventDefault();
+				e.stopPropagation();
+			}
+    	});
+
+
+    	canvas.on("text:editing:entered",function(opt){
+    		_this.editorMode = true;
+    		_this.axisOn = false;
+    	});
+
+    	canvas.on("text:editing:exited",function(opt){
+    		_this.editorMode = false;
+    		_this.axisOn = true;
+    	});
+
+
+    	canvas.on('mouse:down', function(opt) {
+		  	var evt = opt.e;
+		
+				this.isDragging = true;
+				this.selection = false;
+				this.lastPosX = evt.targetTouches[0].clientX;
+				this.lastPosY = evt.targetTouches[0].clientY;
+			
+		});
+		canvas.on('mouse:move', function(opt) {
+			if (this.isDragging) {
+				var e = opt.e;
+				console.log(e,e.clientX , this.lastPosX, e.clientY , this.lastPosY);
+				this.viewportTransform[4] += e.targetTouches[0].clientX - this.lastPosX;
+				this.viewportTransform[5] += e.targetTouches[0].clientY - this.lastPosY;
+				this.requestRenderAll();
+				this.lastPosX = e.targetTouches[0].clientX;
+				this.lastPosY = e.targetTouches[0].clientY;
+			}
+
+
+			//_this.isMousePointInView(opt.e.offsetX, opt.e.offsetY);
+		});
+		canvas.on('mouse:up', function(opt) {
+			if(this.isDragging){
+				this.isDragging = false;
+				this.selection = true;
+				_this.initialCanvasShow();
+			}
+		});
+
+    	// canvas.on("object:moved", function(opt){ 
+    	// 	opt.target.set('opacity', _this.currentObjectOpacity);
+    	// 	_this.currentObjectOpacity = null;
+    	// 	canvas.renderAndReset();
+    	// 	console.log(opt.target.toObject(), opt) 
+    	// });
+
+    	// canvas.on("mouse:up", function(opt){ 
+    	// 	canvas.renderAll();
+    	// });
+
+    	// canvas.on("object:moved", function(opt){ canvas.requestRenderAll(); });
+
+    	this.objScrollX = $$(_this.$el).find(".sh-mid-scrollx");
+    	this.objScrollY = $$(_this.$el).find(".sh-mid-scrolly");
+
+    	//var resetObjectPosition =null;
+
+    	canvas.on('mouse:wheel', function(opt) {
+			var evt = opt.e;
+			var deltaX = opt.e.deltaX, deltaY = opt.e.deltaY;
+			var pointer = canvas.getPointer(opt.e);
+			var center = canvas.getCenter();
+			if (evt.altKey === true) {
+
+				var zoom = canvas.getZoom();
+				var zlHeight = Math.round(_this.pointCanvasParentH/_this.viewCanvasHeight*10000)/10000, 
+				   zlWidth = Math.round(_this.pointCanvasParentW/_this.viewCanvasWidth*10000)/10000;
+				zoom = zoom-_this.curzoom*deltaY/200;
+				if (zoom > 100) zoom = 100;
+				if (zoom < Math.min(0.01, zlHeight, zlWidth)) zoom = Math.min(0.01, zlHeight, zlWidth);
+
+
+				if(_this.isMousePointInView(opt.e.offsetX, opt.e.offsetY)){
+					canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+
+					_this.isWheelScaleState = "point";
+
+					// clearTimeout(_this.showsSrollLag);
+			  //   _this.showsSrollLag = setTimeout(function(){
+			  //   	 _this.initialCanvasShow();
+			  //   	_this.showsSroll = true;
+			  //   }, 500);
+				}
+				else{
+					var param = _this.calMoveParam();
+			    	this.viewportTransform[4] = param.centerFixLeft;
+			    	this.viewportTransform[5] = param.centerFixTop;
+			    	var vpcenter = canvas.getVpCenter();
+			    	this.requestRenderAll();
+
+					canvas.zoomToPoint({ x: vpcenter.x, y: vpcenter.y }, zoom);
+
+					_this.isWheelScaleState = "center";
+
+					// _this.objScrollX.scrollLeft(param.moveLimitX + param.centerFixLeft);
+					// _this.objScrollY.scrollTop(param.moveLimitY + param.centerFixTop);
+
+					// clearTimeout(_this.showsSrollLag);
+			  //   _this.showsSrollLag = setTimeout(function(){
+			  //   		_this.initialCanvasShow((_this.scrollWidth - _this.pointCanvasParentW)/2, (_this.scrollHeight - _this.pointCanvasParentH)/2);
+			  //   	_this.showsSroll = true;
+			  //   }, 500);
+				}
+				
+
+				_this.curzoom = zoom;
+				_this.showsSroll = false;
+				
+
+			    clearTimeout(_this.resetObjectPositionLag);
+			    _this.resetObjectPositionLag = setTimeout(function(){
+				    canvas.forEachObject(function(obj) {
+				    	obj.setCoords();
+				    });
+			    },200);
+			}
+			else{
+				if(!_this.showsSroll){
+					canvas.forEachObject(function(obj) {
+				    	obj.setCoords();
+				    });
+					opt.e.preventDefault();
+					opt.e.stopPropagation();
+					return;
+				}
+				var e = opt.e;
+
+				_this.objScrollX.scrollLeft(_this.objScrollX.scrollLeft() + Math.max(_this.curzoom, 1) *deltaX);
+			    _this.objScrollY.scrollTop(_this.objScrollY.scrollTop() 
+			    + Math.max(_this.curzoom, 1) *deltaY);
+			}
+
+
+
+			opt.e.preventDefault();
+			opt.e.stopPropagation();
+
+		});
+
+
+  //   	fabric.util.object.extend(fabric.Text.prototype, {
+		//     letterSpace: 0,
+		//     _renderChars: function (method, ctx, chars, left, top) {
+		//         if (!this.letterSpace) {
+		//             ctx[method](chars, left, top);
+		//             return;
+		//         }
+		//         var charShift = 0;
+		//         for (var i = 0; i < chars.length; i++) {
+		//             if (i > 0) {
+		//                 charShift += this.letterSpace + ctx.measureText(chars.charAt(i - 1)).width;
+		//             }
+		//             ctx[method](chars.charAt(i), left + charShift, top);
+		//         }
+		//     },
+		//     _getLineWidth: function (ctx, lineIndex) {
+		//         var lineLength = this._textLines[lineIndex].length;
+		//         var additionalSpaceSum = 0
+		//         if (lineLength > 0) {
+		//             additionalSpaceSum = this.letterSpace * (lineLength - 1);
+		//         }
+		//         this.__lineWidths[lineIndex] = ctx.measureText(this._textLines[lineIndex]).width + additionalSpaceSum;
+		//         return this.__lineWidths[lineIndex];
+		//     },
+		//     _renderExtended: function (ctx) {
+		//         this.clipTo && fabric.util.clipContext(this, ctx);
+		//         this.extendedRender = true;
+		//         this._renderTextBackground(ctx);
+		//         this._renderText(ctx);
+
+		//         this._renderTextDecoration(ctx);
+		//         this.clipTo && ctx.restore();
+		//     }
+		// });
+
+
+    	fabric.Object.prototype.cornerStyle = "circle";
+    	fabric.Object.prototype.cornerSize = 11;
+    	fabric.Object.prototype.padding = 0;
+    	fabric.Object.prototype.rotatingPointOffset = 32;
+    	fabric.Object.prototype.cornerColor = "#fff";
+    	fabric.Object.prototype.cornerStrokeColor = "#969696";
+    	fabric.Object.prototype.borderColor = "#969696";
+    	fabric.Object.prototype.transparentCorners = false;
+    	fabric.Object.prototype.perPixelTargetFind = true;
+    	fabric.Object.prototype.borderOpacityWhenMoving = 0.1;
+    	fabric.Object.prototype.objectCaching = true;
+
+    	this.initAligningGuidelines(canvas);
+    	this.initCenteringGuidelines(canvas);
+    	this.iniAxisLines(canvas);
+		// create a rectangle object
+
+		this.showviewportBorder = new fabric.Rect({
+		  left: 0,
+		  top: 0,
+		  fill: '#ffffff',
+		  evented:false,
+		  selectable :false,
+		  excludeFromExport:true,
+		  width: this.viewCanvasWidth > this.pointCanvasParentW?this.viewCanvasWidth:this.pointCanvasParentW,
+		  height: this.viewCanvasHeight > this.pointCanvasParentH?this.viewCanvasHeight:this.pointCanvasParentH,
+		  shadow : new fabric.Shadow("0px 0px 10px rgba(0,0,0,0.5)")
+		});
+
+		this.showviewport = new fabric.Rect({
+		  //top:-this.pointCanvasParentH/2 + 20,
+		  evented:false,
+		  top: -this.viewCanvasHeight/2,
+		  left:-this.viewCanvasWidth/2,
+		  width: this.viewCanvasWidth,
+		  height: this.viewCanvasHeight
+		});
+
+		this.showviewportBorder.clipPath = this.showviewport;
+
+		canvas.add(this.showviewportBorder);
+
+		_this.curzoom = 1;
+
+
+		var rect = new fabric.Rect({
+		  id:"11",
+		  left: 100,
+		  top: 100,
+		  fill: 'orange',
+		  width: 20,
+		  height: 20
+		});
+
+		var rect1 = new fabric.Rect({
+			id:"12",
+		  left: 100,
+		  top: 200,
+		  fill: 'blue',
+		  width: 100,
+		  height: 20
+		});
+
+		var rect2 = new fabric.Rect({
+			id:"13",
+		  left: 100,
+		  top: 200,
+		  fill: 'red',
+		  width: 100,
+		  height: 70
+		});
+
+		function animate(obj) {
+	    obj.rotate(0).animate({ angle: 360 }, {
+	      duration: 3000,
+	      onComplete: function(){ animate(obj) },
+	      easing: function(t, b, c, d) { return c*t/d + b }
+	    });
+	  }
+
+		for(var i=0 ;i<200; i++){
+			var eee = new fabric.Rect({
+			  left: 1000*Math.random(),
+			  top: 2000*Math.random(),
+			  fill: 'black',
+			  width: 320*Math.random(),
+			  height: 140**Math.random(),
+			});
+
+			canvas.add(eee);
+			animate(eee);
+		}
+		var rect3 = new fabric.Rect({
+			id:"14",
+		  left: 100,
+		  top: 200,
+		  fill: 'black',
+		  width: 120,
+		  height: 40
+		});
+
+		var text = new fabric.IText('大神学python', { 
+			left: 100, 
+			top: 100, 
+			id:"text1" , 
+			perPixelTargetFind :false,
+		});
+		canvas.add(text);
+
+		// text.on("moving", function(opt){ log(eventName, opt, o.fill) });
+
+		var x = text.cloneAsImage(function(img){
+			console.log(img);
+			canvas.add(img);
+		}, { enableRetinaScaling:true,id:"15", });
+
+		// "add" rectangle onto canvas
+		canvas.add(rect);
+		canvas.add(rect1);
+		canvas.add(rect2);
+		canvas.add(rect3);
+
+
+		// canvas.forEachObject(function(obj) {
+	 //      var setCoords = obj.setCoords.bind(obj);
+	 //      obj.on({
+	 //        moving: setCoords,
+	 //        scaling: setCoords,
+	 //        rotating: setCoords
+	 //      });
+	 //    })
+
+		
+		var resizeSetTimeOut = null;
+		window.onresize = function(){
+			clearTimeout(resizeSetTimeOut);
+			resizeSetTimeOut = setTimeout(function(){
+				_this.pointCanvasParentH = $parent.clientHeight;
+    	        _this.pointCanvasParentW = $parent.clientWidth;
+				canvas.setWidth(_this.pointCanvasParentW);
+				canvas.setHeight(_this.pointCanvasParentH);
+			},100);
+			
+		}
+
+		this.pointCanvas = canvas;
+
+		canvas.renderAll();
+
+		(function render(){
+		    canvas.renderAll();
+		    fabric.util.requestAnimFrame(render);
+		  })();
+    },
+    watch:{
+    	curzoom:function(newV, oldV) {
+    		this.calScrollSize();
+    		if(oldV==null){
+    			this.initialCanvasShow((this.scrollWidth - this.pointCanvasParentW)/2, (this.scrollHeight - this.pointCanvasParentH)/2);
+    		}
+    	}
+    },
+    computed:{
+    	viewFixScrollLeft:function(){
+    		return this.viewCanvasWidth/2 - this.pointCanvasParentW;
+    	},
+     	viewFixScrollTop:function(){
+     		return this.viewCanvasHeight/2 - this.pointCanvasParentH;
+     	},
+    },
+    methods: {
+    	banCanvasInteract:function(state){
+    		if(state==null){
+    			state = false;
+    		}
+    		this.pointCanvas.interactive = state;
+			this.pointCanvas.selection = state;
+			this.pointCanvas.selectable = state;
+			this.pointCanvas.renderAll();
+    	},
+    	createGuide:function(type, e){
+    		var _this = this;
+    		var lastPosX = e.clientX;
+    		var lastPosY = e.clientY;
+
+    		var offset = 0, target = e.currentTarget;
+    		if(type=="h"){
+    			offset = $$(target).offset().top;
+    		}
+    		else{
+    			offset = $$(target).offset().left;
+    		}
+    		var paddingX = e.pageX - offset, paddingY = e.pageY - offset;
+
+    		lastPosX = offset;
+    		lastPosY = offset;
+
+    		console.log(offset, paddingX, paddingY);
+
+    		_this.guideType = type;
+    		_this.guidePos = 0;
+
+    		$$(document).on("mousemove.createGuide", function(e){
+
+    			if(type=="h"){
+    				_this.guidePos += e.clientY - lastPosY;
+    			}
+    			else {
+    				_this.guidePos += e.clientX - lastPosX;
+    			}
+
+    			//console.log(_this.guidePos);
+    			
+    			lastPosX = e.clientX;
+    			lastPosY = e.clientY;
+    		});
+
+    		$$(document).on("mouseup.createGuide", function(e){
+    			$$(document).off(".createGuide");
+
+    			_this.createGuideLine(_this.guideType, _this.guidePos)
+
+    			_this.guideType = null;
+    			_this.guidePos = null;
+    		});
+    	},
+    	createGuideLine:function(type, pos) {
+    		var left, top, width, height;
+    		var _this = this;
+    		var center = _this.pointCanvas.getCenter();
+    		var vt = _this.pointCanvas.viewportTransform;
+    		var allWidth = Math.max(_this.pointCanvasParentW*2 + _this.viewCanvasWidth, 100000);
+    		var allHeight = Math.max(_this.pointCanvasParentH*2 + _this.viewCanvasHeight, 100000);
+    		var lockX = false, lockY = false, moveCursor;
+    		var guideWidth = 10;
+    		if(type=="h"){
+    			lockX = true;
+    			// x1 = center.left - width;
+    			// x2 = center.left + width;
+    			// y1 = y2 = pos;
+    			left = center.left - allWidth;
+    			top = pos;
+    			width = allWidth*2;
+    			height = 1;
+    			moveCursor = "n-resize";
+    		}
+    		else{
+    			lockY = true;
+    			left = pos;
+    			top = center.top - allHeight;
+    			width = 1;
+    			height = allHeight*2;
+    			// y1 = center.top - height;
+    			// y2 = center.top + height;
+    			// x1 = x2 = pos;
+    			moveCursor = "w-resize";
+    		}
+
+    		var m = fabric.util.transformPoint(new fabric.Point(left, top), fabric.util.invertTransform(vt));
+
+    		var line = new fabric.Rect(
+				// [m1.x,m1.y,m2.x,m2.y],
+				{
+					left:m.x-guideWidth/2,
+					top:m.y-guideWidth/2,
+					width:width,
+					height:height,
+					fill:"#00ffff",
+					stroke:"rgba(255,255,255,0.01)",
+					strokeWidth:guideWidth,
+					borderColor:"transparent",
+					lockMovementX:lockX,
+					lockMovementY:lockY,
+					lockRotation:true,
+					lockScalingX:true,
+					lockScalingY:true,
+					perPixelTargetFind :false,
+					hasControls :false,
+					hasBorder:false,
+					moveCursor:moveCursor,
+					hoverCursor :moveCursor,
+					opacity:0.8,
+					msType:"guidelines",
+					msGuideDirection:type
+				}
+			); 
+    		_this.pointCanvas.add(line);
+    	},
+    	calScrollSize:function(){
+    		this.scrollWidth = this.pointCanvasParentW * 2 + this.viewCanvasWidth*this.curzoom - 2*this.showMin;
+			this.scrollHeight = this.pointCanvasParentH * 2 + this.viewCanvasHeight*this.curzoom - 2*this.showMin;
+
+			// if(this.viewCanvasWidth > this.pointCanvasParentW){
+		 //    	this.scrollWidth -= 2*(this.pointCanvas.getCenter().left+this.viewFixScrollLeft) * (this.curzoom);
+		 //    }
+
+		 //    if(this.viewCanvasHeight > this.pointCanvasParentH){
+		 //    	this.scrollHeight -= 2*(this.pointCanvas.getCenter().top+this.viewFixScrollTop) * (this.curzoom);
+		 //    }
+    	},
+    	calTickParam: function(zoom){
+    		//space 代表间隔距离px，可以为小数， interval代表10个刻度一格，必须为整数
+    		//space*interval>=35 and space*interval <=80 and interval<=10
+    		//space/zoom>=5
+    		//5 14 2.25
+    		var intervalSelect = [10, 5, 4, 2, 1], is =0;
+    		var interval=intervalSelect[is];
+    		var mid = interval * zoom, v = Math.round(50/mid), space=v*zoom;
+			while(space<5 && is<4 && v<1){
+				interval = intervalSelect[++is];
+				mid = interval * zoom;
+				v = Math.round(50/mid);
+				space=v*zoom;
+			}
+
+			if(space<5 && is==4 && v<1){
+				interval = 1;
+				mid = interval * zoom;
+				v = Math.round(50/mid);
+				space=v*zoom;
+			}
+
+    		return {
+    			space: space,
+    			interval: interval
+    		}
+    	},
+    	getViewAbsoluteXY:function(){
+    		var _this=this ,
+    		    param = _this.calMoveParam(), 
+    		    center = _this.pointCanvas.getCenter(),
+    		    vf = _this.pointCanvas.viewportTransform,
+    		    centerfix = fabric.util.transformPoint(new fabric.Point(center.left, center.top), vf),
+    		    centerLeft = centerfix.x,
+    		    centerTop = centerfix.y,
+    		    // centerLeft = center.left - param.centerFixLeft + vf[4],
+    		    // centerTop = center.top - param.centerFixTop + vf[5],
+    		    viewW = (_this.viewCanvasWidth/2)*_this.curzoom,
+    		    viewH = (_this.viewCanvasHeight/2)*_this.curzoom
+    		    ;
+
+    		if(this.viewCanvasWidth > this.pointCanvasParentW){
+		    	centerLeft += (center.left+this.viewFixScrollLeft) * this.curzoom;
+		    }
+
+		    if(this.viewCanvasHeight > this.pointCanvasParentH){
+		    	centerTop += (center.top+this.viewFixScrollTop) * this.curzoom;
+		    }
+
+    		return { 
+    			left: centerLeft - viewW,
+    			right: centerLeft + viewW,
+    			top: centerTop - viewH,
+    			bottom: centerTop + viewH,
+    			width:viewW*2,
+    			height:viewH*2
+    		}
+    	},
+    	isMousePointInView:function(x, y){
+    		var _this = this;
+    		var center = _this.pointCanvas.getCenter();
+    		var param = _this.calMoveParam();
+
+    		var viewXY = _this.getViewAbsoluteXY();
+    		var inContainView = false;
+    		if(y > viewXY.top && y < viewXY.bottom &&  x > viewXY.left && x < viewXY.right){
+    			inContainView = true;
+    		}
+
+            var isContainedport = _this.showviewport.containsPoint( new fabric.Point(x-center.left*_this.curzoom, y-center.top*_this.curzoom), null, false,true);
+
+            var isContainedborder = _this.showviewportBorder.containsPoint( new fabric.Point(x, y), null, false,true);
+
+            //_this.logtxt = "calc:" + inContainView + ", port:" + isContainedborder + ",border:" + isContainedborder + ", x:" + x + ", y:" + y;
+
+            return inContainView;
+    	},
+    	calMoveParam:function(){
+			var viewCanvasWidth = this.viewCanvasWidth*this.curzoom,
+		    viewCanvasHeight =  this.viewCanvasHeight*this.curzoom;
+		    var center = this.pointCanvas.getCenter();
+
+		    var moveLimitX = (viewCanvasWidth+this.pointCanvasParentW)/2 - this.showMin;
+		    var moveLimitY = (viewCanvasHeight+this.pointCanvasParentH)/2 -this.showMin;
+		    
+		    if(this.viewCanvasWidth > this.pointCanvasParentW){
+		    	moveLimitX -= (center.left+this.viewFixScrollLeft) * this.curzoom;
+		    }
+
+
+		    if(this.viewCanvasHeight > this.pointCanvasParentH){
+		    	moveLimitY -= (center.top+this.viewFixScrollTop) * this.curzoom;
+		    }
+
+		    var cl =center.left*(1-this.curzoom), ct = center.top*(1-this.curzoom);
+
+		    //中心点测试
+		    //var _this = vueMain.$children[0].$children[0];var zoom = 0.4;var center = _this.pointCanvas.getCenter();_this.pointCanvas.viewportTransform = [zoom,0,0,zoom,center.left*(1-zoom),center.left*(1-zoom)  ];_this.pointCanvas.requestRenderAll();_this.pointCanvas.forEachObject(function(obj) {obj.setCoords();});
+
+	    	// console.log("Y",this.viewportTransform[5]-ct,moveLimitY,viewCanvasHeight/2 , _this.pointCanvasParentH/2);
+		    // console.log("X",this.viewportTransform[4]-cl,moveLimitX,viewCanvasWidth/2, _this.pointCanvasParentW/2);
+		    // console.log("center", JSON.stringify(center), JSON.stringify(vpcenter), _this.curzoom ,canvas.getZoom(), "cl"+cl, "ct"+ct);
+
+		    return {moveLimitX: moveLimitX, moveLimitY:moveLimitY, centerFixLeft:cl, centerFixTop:ct};
+    	},
+    	initialCanvasShow:function(x, y){
+    		var _this = this;
+    		var scrollOffsetX, scrollOffsetY;
+    		var param = this.calMoveParam();
+    		if(x==null){
+    			scrollOffsetX = param.moveLimitX + param.centerFixLeft - this.pointCanvas.viewportTransform[4];
+    		}
+    		else{
+    			scrollOffsetX = x;
+    		}
+    		
+    		if(y==null){
+    			scrollOffsetY = param.moveLimitY + param.centerFixTop - this.pointCanvas.viewportTransform[5];
+    		}
+    		else{
+    			scrollOffsetY = y;
+    		}
+
+   //  		_this.objScrollX.scrollLeft((_this.scrollWidth - _this.pointCanvasParentW)/2);
+			// _this.objScrollY.scrollTop((_this.scrollHeight - _this.pointCanvasParentH)/2);
+
+    		
+    		// console.log("X",param.moveLimitX , param.centerFixLeft,this.pointCanvas.viewportTransform[4], scrollOffsetX);
+    		// console.log("Y",param.moveLimitY , param.centerFixTop ,this.pointCanvas.viewportTransform[5], scrollOffsetY);
+
+    		setTimeout(function(){
+    			_this.objScrollX.scrollLeft(scrollOffsetX);
+				_this.objScrollY.scrollTop(scrollOffsetY);
+    		}, 0);
+
+    	},
+    	pointScrollX:function(e){
+    		var target = e.currentTarget;
+    		var param = this.calMoveParam();
+    		var _this = this;
+    		this.pointCanvas.viewportTransform[4] = param.moveLimitX + param.centerFixLeft - $$(target).scrollLeft();
+    		//console.log("Y",param.moveLimitX , param.centerFixLeft , $$(target).scrollLeft(),this.pointCanvas.viewportTransform[4]);
+
+
+    		clearTimeout(_this.resetObjectPositionLag);
+		    _this.resetObjectPositionLag = setTimeout(function(){
+			    _this.pointCanvas.forEachObject(function(obj) {
+			    	obj.setCoords();
+			    });
+		    },200);
+
+    		this.pointCanvas.requestRenderAll();
+
+   //  		setTimeout(function(){
+			//     _this.showsSroll = true;
+			// }, 0);
+
+    		// clearTimeout(_this.showsSrollLag);
+		    // _this.showsSrollLag = setTimeout(function(){
+		    // 	_this.showsSroll = false;
+		    // }, 3000);
+    	},
+    	pointScrollY:function(e){
+    		var target = e.currentTarget;
+    		var param = this.calMoveParam();
+    		var _this = this;
+    		this.pointCanvas.viewportTransform[5] = param.moveLimitY + param.centerFixTop - $$(target).scrollTop();
+    		//console.log("X",param.moveLimitY , param.centerFixTop , $$(target).scrollTop(),this.pointCanvas.viewportTransform[5]);
+
+    		clearTimeout(_this.resetObjectPositionLag);
+		    _this.resetObjectPositionLag = setTimeout(function(){
+			    _this.pointCanvas.forEachObject(function(obj) {
+			    	obj.setCoords();
+			    });
+		    },200);
+
+    		this.pointCanvas.requestRenderAll();
+
+   //  		setTimeout(function(){
+			//     _this.showsSroll = true;
+			// }, 0);
+    	},
+    	resetCenteringGuidelines:function(){
+    		var centerLineMargin =4;
+			for (var i = this.pointCanvasParentW/2 - centerLineMargin, len = this.pointCanvasParentW/2 + centerLineMargin; i <= len; i++) {
+				this.canvasWidthCenterMap[Math.round(i)] = true;
+			}
+			for (var i = this.pointCanvasParentH/2 - centerLineMargin, len = this.pointCanvasParentH/2 + centerLineMargin; i <= len; i++) {
+				this.canvasHeightCenterMap[Math.round(i)] = true;
+			}
+    	},
+    	iniAxisLines:function(canvas){
+    		var _this = this,
+    		context = canvas.getSelectionContext(),
+			TICK_WIDTH = 8, //刻度的长度
+			TICKS_LINEWIDTH = 0.5,
+			TICKS_COLOR = '#2A2A2A'
+			;
+			function drawVerticalAxisTicks(start, end, space, interval, zoom) {
+			    var deltaX;
+				var TICKS = Math.abs(end - start) / space;
+
+				if(start<end){
+				    for (var i = 0; i < TICKS; i++) {
+				        context.beginPath();
+				        if (i % interval === 0) {
+							deltaX = TICK_WIDTH;
+				            context.moveTo(0, space * i+start);
+				            context.lineTo(TICK_WIDTH, space * i+start);
+				            context.textAlign = 'left';
+							context.font = 'normal normal normal 6pt  "Microsoft YaHei",宋体, "Helvetica Neue", Helvetica, Arial';
+				            context.fillText(Math.round(i * space/zoom), TICK_WIDTH-4, space * i-3 + start);
+				        }
+						else if(interval==10 && i % 5 === 0) {
+							deltaX = TICK_WIDTH/2 + 2;
+				        }
+				      	else{
+				      		deltaX = TICK_WIDTH/2;
+				      	}         
+				        context.moveTo(0, i * space+start);
+				        context.lineTo(deltaX, i * space+start);
+				        context.stroke();
+					}
+				}
+				else {
+					for (var i = 1; i < TICKS; i++) {
+				        context.beginPath();
+				        if (i % interval === 0) {
+							deltaX = TICK_WIDTH;
+				            context.moveTo(0, start - space * i);
+				            context.lineTo(TICK_WIDTH, start - space * i);
+				            context.textAlign = 'left';
+							context.font = 'normal normal normal 6pt  "Microsoft YaHei",宋体, "Helvetica Neue", Helvetica, Arial';
+				            context.fillText("-"+Math.round(i * space/zoom), TICK_WIDTH-2, start-space * i-3);
+				        }
+						else if(interval==10 && i % 5 === 0) {
+							deltaX = TICK_WIDTH/2 + 2;
+				        }
+				      	else{
+				      		deltaX = TICK_WIDTH/2;
+				      	}         
+				        context.moveTo(0, start - i * space);
+				        context.lineTo(deltaX, start - i * space);
+				        context.stroke();
+				    }
+				}
+			}
+			function drawHorizontalAxisTicks(start, end, space, interval, zoom) {
+			    var deltaY;
+				var TICKS = Math.abs(end - start) / space;
+
+				if(start<end){
+					for (var i=0; i < TICKS; i++) {
+				        context.beginPath();
+				        if (i % interval === 0) {
+				            deltaY = TICK_WIDTH;
+				            context.moveTo(space * i + start, 0);
+				            context.lineTo(space * i + start, TICK_WIDTH);
+				            context.textAlign = 'left';
+				            context.font = 'normal normal normal 6pt  "Microsoft YaHei",宋体, "Helvetica Neue", Helvetica, Arial';
+				            context.fillText(Math.round(i * space/zoom), 3 + space * i + start, TICK_WIDTH+5);
+				        }
+				      	else if(interval==10 && i % 5 === 0) {
+							deltaY = TICK_WIDTH/2 + 2;
+				        }
+				      	else{
+				      		deltaY = TICK_WIDTH/2;
+				      	}          
+				        context.moveTo(i * space + start, 0);
+				        context.lineTo(i * space + start,  deltaY);
+				        context.stroke();
+				    }
+				}
+				else{
+					for (var i=1; i < TICKS; i++) {
+				        context.beginPath();
+				        if (i % interval === 0) {
+				            deltaY = TICK_WIDTH;
+				            context.moveTo(start - space * i, 0);
+				            context.lineTo(start - space * i, TICK_WIDTH);
+				            context.textAlign = 'left';
+				            context.font = 'normal normal normal 6pt  "Microsoft YaHei",宋体, "Helvetica Neue", Helvetica, Arial';
+				            context.fillText("-" + Math.round(i * space/zoom), start - (3 + space * i), TICK_WIDTH+5);
+				        }
+				      	else if(interval==10 && i % 5 === 0) {
+							deltaY = TICK_WIDTH/2 + 2;
+				        }
+				      	else{
+				      		deltaY = TICK_WIDTH/2;
+				      	}          
+				        context.moveTo(start - i * space, 0);
+				        context.lineTo(start - i * space,  deltaY);
+				        context.stroke();
+				    }
+				}
+			    
+			}
+
+
+			function drawAxes() {
+				var param = _this.calMoveParam(), center = canvas.getCenter(),vf = canvas.viewportTransform,
+				    viewXY = _this.getViewAbsoluteXY(),
+				zeroPoint = { x: viewXY.left, y: viewXY.top }
+				;
+			    context.save(); 
+			    
+			    context.lineWidth = TICKS_LINEWIDTH;
+			    context.strokeStyle = TICKS_COLOR;
+
+				var tickParam = _this.calTickParam(_this.curzoom);
+
+				var space = tickParam.space, interval = tickParam.interval;
+				//_this.logtxt = "space:" + space + ", interval:" + interval + ", zoom:" + _this.curzoom + ", space/zoom:" + space/_this.curzoom + ", space*interval:" + space*interval;
+				drawVerticalAxisTicks(zeroPoint.y, _this.pointCanvasParentH, space, interval, _this.curzoom);
+				drawVerticalAxisTicks(zeroPoint.y, 0, space, interval, _this.curzoom);
+
+			    drawHorizontalAxisTicks(zeroPoint.x, _this.pointCanvasParentW, space, interval, _this.curzoom);
+				drawHorizontalAxisTicks(zeroPoint.x, 0, space, interval, _this.curzoom);
+			    context.restore();
+			}
+			
+
+			canvas.on('before:render', function() {
+				if(_this.axisOn){
+					canvas.clearContext(canvas.contextTop);
+				}
+			});
+
+			canvas.on('after:render', function() {
+				if(_this.axisOn){
+					drawAxes();
+				}
+
+			});
+    	},
+    	initCenteringGuidelines: function(canvas) {
+
+		  var centerLineColor = 'rgba(255,0,241,0.5)',
+		      centerLineWidth = 1,
+		      ctx = canvas.getSelectionContext(),
+		      viewportTransform,
+		      _this = this;
+
+		  this.resetCenteringGuidelines();
+
+		  function showVerticalCenterLine() {
+		  	var param = _this.calMoveParam();
+		    showCenterLine(_this.pointCanvasParentW/2 + 0.5 + viewportTransform[4]-param.centerFixLeft, 0, _this.pointCanvasParentW/2 + 0.5 + viewportTransform[4]-param.centerFixLeft, _this.pointCanvasParentH);
+		  }
+
+		  function showHorizontalCenterLine() {
+		  	_this.logtxt = JSON.stringify(viewportTransform);
+		  	var param = _this.calMoveParam();
+		    showCenterLine(0, _this.pointCanvasParentH/2 + 0.5 + viewportTransform[5]-param.centerFixTop, _this.pointCanvasParentW, _this.pointCanvasParentH/2 + 0.5+ viewportTransform[5]-param.centerFixTop);
+		  }
+
+		  function showCenterLine(x1, y1, x2, y2) {
+			ctx.save();
+			ctx.strokeStyle = centerLineColor;
+			ctx.lineWidth = centerLineWidth;
+			ctx.beginPath();
+			ctx.moveTo(x1, y1);
+			ctx.lineTo(x2, y2);
+			ctx.stroke();
+			ctx.restore();
+		  }
+
+		  var afterRenderActions = [],
+		      isInVerticalCenter,
+		      isInHorizontalCenter;
+
+		  canvas.on('mouse:down', function () {
+		    viewportTransform = canvas.viewportTransform;
+		  });
+
+		  canvas.on('object:moving', function(e) {
+			var object = e.target,
+			    objectCenter = object.getCenterPoint(),
+			    transform = canvas._currentTransform;
+
+		    if(object.msType == "guidelines"){
+		    	return;
+		    }
+
+			if (!transform) return;
+
+			isInVerticalCenter = Math.round(objectCenter.x) in _this.canvasWidthCenterMap,
+			isInHorizontalCenter = Math.round(objectCenter.y) in _this.canvasHeightCenterMap;
+
+			if (isInHorizontalCenter || isInVerticalCenter) {
+			  object.setPositionByOrigin(new fabric.Point((isInVerticalCenter ? _this.pointCanvasParentW/2 : objectCenter.x), (isInHorizontalCenter ? _this.pointCanvasParentH/2 : objectCenter.y)), 'center', 'center');
+			}
+		  });
+
+		  canvas.on('before:render', function() {
+		    canvas.clearContext(canvas.contextTop);
+		  });
+
+		  canvas.on('after:render', function() {
+		    if (isInVerticalCenter) {
+		      showVerticalCenterLine();
+		    }
+		    if (isInHorizontalCenter) {
+		      showHorizontalCenterLine();
+		    }
+		  });
+
+		  canvas.on('mouse:up', function() {
+		    // clear these values, to stop drawing guidelines once mouse is up
+		    isInVerticalCenter = isInHorizontalCenter = null;
+		    canvas.renderAll();
+		  });
+		},
+	    drawLine: function(ctx, x1, y1, x2, y2,width, style) {
+	    		var _this = this;
+			  	var vt = _this.pointCanvas.viewportTransform;
+
+			    ctx.save();
+			    ctx.lineWidth = width;
+			    ctx.strokeStyle = style;
+			    
+			    ctx.beginPath();
+			    var m1 = fabric.util.transformPoint(new fabric.Point(x1, y1), vt);
+			    var m2 = fabric.util.transformPoint(new fabric.Point(x2, y2), vt);
+			    ctx.moveTo(m1.x, m1.y);
+			    ctx.lineTo(m2.x, m2.y);
+			    ctx.stroke();
+			    ctx.restore();
+		},
+    	initAligningGuidelines: function(canvas) {
+
+			  var ctx = canvas.getSelectionContext(),
+			      aligningLineOffset = 3,
+			      aligningLineMargin = 2,
+			      aligningLineWidth = 1,
+			      aligningLineColor = 'rgb(0,255,0)',
+			      isScaleLineColor= "#EAEA2F",
+			      viewportTransform,
+			      zoom = 1, _this = this, param;
+
+			  function drawVerticalLine(coords) {
+
+			  	var lineWidth = aligningLineWidth;
+			  	var strokeStyle;
+			    if(coords.isScale){
+			    	strokeStyle = isScaleLineColor;
+			    }
+			    else{
+			    	strokeStyle = aligningLineColor;
+			    }
+
+
+			    _this.drawLine(
+			      ctx,
+			      coords.x + 0.5,
+			      coords.y1 > coords.y2 ? coords.y2 : coords.y1,
+			      coords.x + 0.5,
+			      coords.y2 > coords.y1 ? coords.y2 : coords.y1,
+			      lineWidth,
+			      strokeStyle
+			    );
+			  }
+
+			  function drawHorizontalLine(coords) {
+			  	//_this.logtxt = JSON.stringify([coords.x1, coords.y, coords.x2, coords.y]);
+			  	var lineWidth = aligningLineWidth;
+			  	var strokeStyle;
+			    if(coords.isScale){
+			    	strokeStyle = isScaleLineColor;
+			    }
+			    else{
+			    	strokeStyle = aligningLineColor;
+			    }
+
+			    _this.drawLine(
+			      ctx,
+			      coords.x1 > coords.x2 ? coords.x2 : coords.x1,
+			      coords.y + 0.5,
+			      coords.x2 > coords.x1 ? coords.x2 : coords.x1,
+			      coords.y + 0.5,
+			      lineWidth,
+			      strokeStyle
+			    );
+			  }
+
+			  function isInRange(value1, value2, isScale, type) {
+			    value1 = Math.round(value1);
+			    value2 = Math.round(value2);
+			    var margin = aligningLineMargin;
+			    if(isScale){
+			    	margin = 1;
+			    }
+
+			    if(type=="matrix"){
+			    	margin = 4;
+			    }
+			    else if(type=="guidelines"){
+			    	margin = 8;
+			    }
+
+			    for (var i = value1 - margin, len = value1 + margin; i <= len; i++) {
+			      if (i === value2) {
+			        return true;
+			      }
+			    }
+			    return false;
+			  }
+
+			  function setPosition(activeObject, Point, isScale){
+			  	if(isScale){
+			  		return;
+			  	}
+			  	activeObject.setPositionByOrigin(Point, 'center', 'center');
+			  }
+
+			  function createGuideLine(e, isScale){
+
+			    if(!isScale){
+			    	isScale = false;
+			    }
+
+			  	var activeObject = e.target,
+			        canvasObjects = canvas.getObjects(),
+			        activeObjectCenter = activeObject.getCenterPoint(),
+			        activeObjectLeft = activeObjectCenter.x,
+			        activeObjectTop = activeObjectCenter.y,
+			        activeObjectBoundingRect = activeObject.getBoundingRect(),
+			        activeObjectHeight = activeObjectBoundingRect.height / viewportTransform[3],
+			        activeObjectWidth = activeObjectBoundingRect.width / viewportTransform[0],
+			        horizontalInTheRange = false,
+			        verticalInTheRange = false,
+			        transform = canvas._currentTransform;
+
+			    // _this.logtxt = "activeObjectLeft:" + activeObjectLeft + ", activeObjectTop:" + activeObjectTop + ", activeObjectBoundingRect:" + JSON.stringify(activeObjectBoundingRect) + ", scaleX:" + JSON.stringify(e.transform.newScaleX) + ", scaleY:" + JSON.stringify(e.transform.newScaleY);
+
+			    if(activeObject.msType == "guidelines"){
+			    	return;
+			    }
+
+			    if(isScale){
+			    	if(e.transform.action=="scale" || e.transform.action=="scaleY"){
+			    		activeObjectHeight = activeObjectHeight*e.transform.newScaleY/e.transform.scaleY;
+			    	}
+			    	
+			    	if(e.transform.action=="scale" || e.transform.action=="scaleX"){
+			    		activeObjectWidth = activeObjectWidth*e.transform.newScaleX/e.transform.scaleX;
+			    	}
+
+
+			  //   	var circle = new fabric.Circle({
+					//   radius: 4, fill: '#'+Math.floor(Math.random()*256).toString(10), left: activeObjectLeft, top: activeObjectTop
+					// });
+					// var rect = new fabric.Rect({
+					//   left: activeObjectLeft,
+					//   top: activeObjectTop,
+					//   fill: '#'+Math.floor(Math.random()*256).toString(10),
+					//   width: activeObjectWidth,
+					//   height: activeObjectHeight,
+					//   originX:"center",
+					//   originY:"center"
+					// });
+					// canvas.add(circle, rect);
+			    }
+
+			    if (!transform) return;
+
+
+			    //水平网格对齐
+			    var preAdjusted = null;
+			    for(var i=0;i<matrixVertical.length;i++){
+			    	var m = matrixVertical[i];
+			    	var transformPoint = fabric.util.transformPoint(new fabric.Point(0, m[0]), fabric.util.invertTransform(viewportTransform));
+			    	var linespx = transformPoint.y;
+			    	//中中
+					if (isInRange(linespx, activeObjectTop, isScale, "matrix")) {
+						//_this.logtxt = "linespx:" +linespx + ", activeObjectTop:" + activeObjectTop + ", -:" + (activeObjectTop- activeObjectHeight / 2) + ", +:" + (activeObjectTop+ activeObjectHeight / 2);
+						preAdjusted = linespx;
+						setPosition(activeObject,new fabric.Point(activeObjectLeft, preAdjusted), isScale, "matrix");
+					}
+					//中上
+					if (isInRange(linespx, activeObjectTop - activeObjectHeight / 2, isScale, "matrix")) {
+						//_this.logtxt = "linespx:" + linespx + ", activeObjectTop:" + activeObjectTop + ", -:" + (activeObjectTop- activeObjectHeight / 2) + ", +:" + (activeObjectTop+ activeObjectHeight / 2);
+						preAdjusted = linespx + activeObjectHeight / 2;
+						setPosition(activeObject,new fabric.Point(activeObjectLeft, preAdjusted), isScale, "matrix");
+					}
+					//中下
+					if (isInRange(linespx, activeObjectTop + activeObjectHeight / 2, isScale, "matrix")) {
+						//_this.logtxt = "linespx:" + linespx + ", activeObjectTop:" + activeObjectTop + ", -:" + (activeObjectTop- activeObjectHeight / 2) + ", +:" + (activeObjectTop+ activeObjectHeight / 2);
+						preAdjusted = linespx - activeObjectHeight / 2;
+						setPosition(activeObject,new fabric.Point(activeObjectLeft, preAdjusted), isScale, "matrix");
+					}
+			    }
+
+			    //垂直网格对齐
+			    for(var i=0;i<matrixHorizen.length;i++){
+					var m = matrixHorizen[i];
+					var transformPoint = fabric.util.transformPoint(new fabric.Point(m[0], 0), fabric.util.invertTransform(viewportTransform));
+					var linespx = transformPoint.x;
+					// snap by the horizontal center line 前者是参照、后者是活动者，水平中中
+					if (isInRange(linespx, activeObjectLeft, isScale, "matrix")) {
+					verticalInTheRange = true;
+						setPosition(activeObject, new fabric.Point(linespx, preAdjusted==null?activeObjectTop:preAdjusted), isScale, "matrix");
+					}
+					//中左
+					if (isInRange(linespx, activeObjectLeft - activeObjectWidth / 2, isScale, "matrix")) {
+						setPosition(activeObject, new fabric.Point(linespx+ activeObjectWidth / 2, preAdjusted==null?activeObjectTop:preAdjusted), isScale, "matrix");
+					}
+					//中右
+					if (isInRange(linespx, activeObjectLeft + activeObjectWidth / 2, isScale, "matrix")) {
+						setPosition(activeObject, new fabric.Point(linespx - activeObjectWidth / 2, preAdjusted==null?activeObjectTop:preAdjusted), isScale, "matrix");
+					}
+			    }
+
+
+
+
+			    // It should be trivial to DRY this up by encapsulating (repeating) creation of x1, x2, y1, and y2 into functions,
+			    // but we're not doing it here for perf. reasons -- as this a function that's invoked on every mouse move
+
+			    for (var i = canvasObjects.length; i--; ) {
+
+			      if (canvasObjects[i] === activeObject || !canvasObjects[i].evented || canvasObjects[i].msType == "guidelines") continue;
+
+			      var objectCenter = canvasObjects[i].getCenterPoint(),
+			          objectLeft = objectCenter.x,
+			          objectTop = objectCenter.y,
+			          objectBoundingRect = canvasObjects[i].getBoundingRect(),
+			          objectHeight = objectBoundingRect.height / viewportTransform[3],
+			          objectWidth = objectBoundingRect.width / viewportTransform[0],
+			          preAdjusted = null
+			       ;
+
+
+
+
+			      //水平位移辅助线生成
+			      var common = {
+			          y1: (objectTop < activeObjectTop)
+			            ? (objectTop - objectHeight / 2 - aligningLineOffset)
+			            : (objectTop + objectHeight / 2 + aligningLineOffset),
+			          y2: (activeObjectTop > objectTop)
+			            ? (activeObjectTop + activeObjectHeight / 2 + aligningLineOffset)
+			            : (activeObjectTop - activeObjectHeight / 2 - aligningLineOffset),
+			           isScale: isScale
+			      }
+			      // snap by the horizontal center line 前者是参照、后者是活动者，水平中中
+			      if (isInRange(objectLeft, activeObjectLeft, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft;
+			        setPosition(activeObject, new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+			      //中左
+			      if (isInRange(objectLeft, activeObjectLeft - activeObjectWidth / 2, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft+ activeObjectWidth / 2;
+			        setPosition(activeObject, new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+			      //中右
+			      if (isInRange(objectLeft, activeObjectLeft + activeObjectWidth / 2, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft - activeObjectWidth / 2;
+			        setPosition(activeObject, new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+			      
+
+			      // snap by the left edge 前者是参照、后者是活动者，水平左中
+			      if (isInRange(objectLeft - objectWidth / 2, activeObjectLeft, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft - objectWidth / 2;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft - objectWidth / 2;
+			        setPosition(activeObject, new fabric.Point(objectLeft - objectWidth / 2, activeObjectTop), isScale);
+			      }
+			      //左左**
+			      if (isInRange(objectLeft - objectWidth / 2, activeObjectLeft - activeObjectWidth / 2,isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft - objectWidth / 2;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft - objectWidth / 2 + activeObjectWidth / 2;
+			        setPosition(activeObject,new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+			      //左右
+			      if (isInRange(objectLeft - objectWidth / 2, activeObjectLeft + activeObjectWidth / 2, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft - objectWidth / 2;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft - objectWidth / 2 - activeObjectWidth / 2;
+			        setPosition(activeObject,new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+
+
+			      // snap by the right edge 前者是参照、后者是活动者，水平右中
+			      if (isInRange(objectLeft + objectWidth / 2, activeObjectLeft, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft + objectWidth / 2;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft + objectWidth / 2;
+			        setPosition(activeObject,new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+			      //右左
+			      if (isInRange(objectLeft + objectWidth / 2, activeObjectLeft - activeObjectWidth / 2, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft + objectWidth / 2;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft + objectWidth / 2 + activeObjectWidth / 2;
+			        setPosition(activeObject,new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+			      //右右
+			      if (isInRange(objectLeft + objectWidth / 2, activeObjectLeft + activeObjectWidth / 2, isScale)) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft + objectWidth / 2;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft + objectWidth / 2 - activeObjectWidth / 2;
+			        setPosition(activeObject,new fabric.Point(preAdjusted, activeObjectTop), isScale);
+			      }
+
+
+			      var common = {
+			          x1: (objectLeft < activeObjectLeft)
+			            ? (objectLeft - objectWidth / 2 - aligningLineOffset)
+			            : (objectLeft + objectWidth / 2 + aligningLineOffset),
+			          x2: (activeObjectLeft > objectLeft)
+			            ? (activeObjectLeft + activeObjectWidth / 2 + aligningLineOffset)
+			            : (activeObjectLeft - activeObjectWidth / 2 - aligningLineOffset),
+			           isScale: isScale
+			        }
+
+
+			      // snap by the vertical center line 前者是参照、后者是活动者，垂直中中
+			      if (isInRange(objectTop, activeObjectTop, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop), isScale);
+			      }
+			      //中上
+			      if (isInRange(objectTop, activeObjectTop- activeObjectHeight / 2, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop + activeObjectHeight / 2), isScale);
+			      }
+			      //中下
+			      if (isInRange(objectTop, activeObjectTop+ activeObjectHeight / 2, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop - activeObjectHeight / 2), isScale);
+			      }
+
+
+
+			      //上中
+			      if (isInRange(objectTop - objectHeight / 2, activeObjectTop, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop - objectHeight / 2;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop - objectHeight / 2), isScale);
+			      }
+			      // snap by the top edge 上上
+			      if (isInRange(objectTop - objectHeight / 2, activeObjectTop - activeObjectHeight / 2, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop - objectHeight / 2;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop - objectHeight / 2 + activeObjectHeight / 2), isScale);
+			      }
+			      //上下
+			      if (isInRange(objectTop - objectHeight / 2, activeObjectTop + activeObjectHeight / 2, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop - objectHeight / 2;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop - objectHeight / 2 - activeObjectHeight / 2), isScale);
+			      }
+
+
+			      //下中
+			      if (isInRange(objectTop + objectHeight / 2, activeObjectTop, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop + objectHeight / 2;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop + objectHeight / 2), isScale);
+			      }
+			      //下上
+			      if (isInRange(objectTop + objectHeight / 2, activeObjectTop - activeObjectHeight / 2, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop + objectHeight / 2;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop + objectHeight / 2 + activeObjectHeight / 2), isScale);
+			      }
+			      // snap by the bottom edge 下下
+			      if (isInRange(objectTop + objectHeight / 2, activeObjectTop + activeObjectHeight / 2, isScale)) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop + objectHeight / 2;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop + objectHeight / 2 - activeObjectHeight / 2), isScale);
+			      }
+
+
+			    }
+
+
+			    //垂直辅助线处理
+			    var preAdjusted = null;
+			    for(var i=0;i<canvasObjects.length;i++){
+					var objectCenter = canvasObjects[i].getCenterPoint(),
+					objectLeft = objectCenter.x,
+					objectTop = objectCenter.y,
+					objectBoundingRect = canvasObjects[i].getBoundingRect(),
+					objectHeight = objectBoundingRect.height / viewportTransform[3],
+					objectWidth = objectBoundingRect.width / viewportTransform[0]
+					;
+			    	if(canvasObjects[i].msType != "guidelines"){
+			    		continue;
+			    	}
+
+			    	if(canvasObjects[i].msGuideDirection != "v"){
+			    		continue;
+			    	}
+
+			    	//水平辅助线生成
+			      	var common = {
+			          y1: (objectTop < activeObjectTop)
+			            ? (objectTop - objectHeight / 2 - aligningLineOffset)
+			            : (objectTop + objectHeight / 2 + aligningLineOffset),
+			          y2: (activeObjectTop > objectTop)
+			            ? (activeObjectTop + activeObjectHeight / 2 + aligningLineOffset)
+			            : (activeObjectTop - activeObjectHeight / 2 - aligningLineOffset),
+			           isScale: isScale
+			        }
+
+			    	// snap by the horizontal center line 前者是参照、后者是活动者，水平中中
+			      if (isInRange(objectLeft, activeObjectLeft, isScale, "guidelines")) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft;
+			        setPosition(activeObject, new fabric.Point(preAdjusted, activeObjectTop), isScale, "guidelines");
+			      }
+			      //中左
+			      if (isInRange(objectLeft, activeObjectLeft - activeObjectWidth / 2, isScale, "guidelines")) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft+ activeObjectWidth / 2;
+			        setPosition(activeObject, new fabric.Point(preAdjusted, activeObjectTop), isScale, "guidelines");
+			      }
+			      //中右
+			      if (isInRange(objectLeft, activeObjectLeft + activeObjectWidth / 2, isScale, "guidelines")) {
+			        verticalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.x = objectLeft;
+			        verticalLines.push(common1);
+			        preAdjusted = objectLeft - activeObjectWidth / 2;
+			        setPosition(activeObject, new fabric.Point(preAdjusted, activeObjectTop), isScale, "guidelines");
+			      }
+
+			    }
+
+			    //水平辅助线处理
+			    for(var i=0;i<canvasObjects.length;i++){
+					var objectCenter = canvasObjects[i].getCenterPoint(),
+					objectLeft = objectCenter.x,
+					objectTop = objectCenter.y,
+					objectBoundingRect = canvasObjects[i].getBoundingRect(),
+					objectHeight = objectBoundingRect.height / viewportTransform[3],
+					objectWidth = objectBoundingRect.width / viewportTransform[0]
+					;
+			    	if(canvasObjects[i].msType != "guidelines"){
+			    		continue;
+			    	}
+
+			    	if(canvasObjects[i].msGuideDirection != "h"){
+			    		continue;
+			    	}
+
+			      var common = {
+			          x1: (objectLeft < activeObjectLeft)
+			            ? (objectLeft - objectWidth / 2 - aligningLineOffset)
+			            : (objectLeft + objectWidth / 2 + aligningLineOffset),
+			          x2: (activeObjectLeft > objectLeft)
+			            ? (activeObjectLeft + activeObjectWidth / 2 + aligningLineOffset)
+			            : (activeObjectLeft - activeObjectWidth / 2 - aligningLineOffset),
+			           isScale: isScale
+			        }
+
+
+			      // snap by the vertical center line 前者是参照、后者是活动者，垂直中中
+			      if (isInRange(objectTop, activeObjectTop, isScale, "guidelines")) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop), isScale, "guidelines");
+			      }
+			      //中上
+			      if (isInRange(objectTop, activeObjectTop- activeObjectHeight / 2, isScale, "guidelines")) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop + activeObjectHeight / 2), isScale, "guidelines");
+			      }
+			      //中下
+			      if (isInRange(objectTop, activeObjectTop+ activeObjectHeight / 2, isScale, "guidelines")) {
+			        horizontalInTheRange = true;
+			        var common1 =  $$.extend(true, {}, common);
+			        common1.y = objectTop;
+			        horizontalLines.push(common1);
+			        setPosition(activeObject,new fabric.Point(preAdjusted==null?activeObjectLeft:preAdjusted, objectTop - activeObjectHeight / 2), isScale, "guidelines");
+			      }
+
+			    }
+
+
+			    if (!horizontalInTheRange) {
+			      horizontalLines.length = 0;
+			    }
+
+			    if (!verticalInTheRange) {
+			      verticalLines.length = 0;
+			    }
+			  }
+
+
+			var matrixHorizen = [], matrixVertical = [];
+
+			function createMatrixData(){
+				var param = _this.calMoveParam(), center = canvas.getCenter(),vf = canvas.viewportTransform,
+				    viewXY = _this.getViewAbsoluteXY(),
+				    space = 50*_this.curzoom,
+				    isHorizen = true,
+				    isVertical = true
+				;
+
+				//vercal
+				var matrixVertical = [];
+				for(var i=1; i<viewXY.height/space;i++){
+					matrixVertical.push([viewXY.top + i*space+0.5, viewXY.left+1,viewXY.left+viewXY.width+0.5 ]);
+				}	
+
+				var matrixHorizen = [];
+				for(var i=1; i<viewXY.width/space;i++){
+					matrixHorizen.push([viewXY.left + i*space+0.5, viewXY.top+1,viewXY.top+viewXY.height+0.5 ]);
+				}
+
+				return {matrixVertical:matrixVertical, matrixHorizen:matrixHorizen}
+			}
+
+			function drawMatrix() {
+				// var param = _this.calMoveParam(), center = canvas.getCenter(),vf = canvas.viewportTransform,
+				//     viewXY = _this.getViewAbsoluteXY(),
+				//     space = 50*_this.curzoom,
+				//     isHorizen = true,
+				//     isVertical = true
+				// ;
+
+				//vercal
+				var matrixData = createMatrixData();
+				var matrixHorizen = matrixData.matrixHorizen, matrixVertical = matrixData.matrixVertical;
+				for(var i=0; i<matrixVertical.length;i++){
+					var m = matrixVertical[i];
+				    ctx.save();
+				    ctx.lineWidth = 0.5;
+				    ctx.strokeStyle = "#8D8D8D";
+				    ctx.setLineDash([1,1]);
+				    ctx.beginPath();
+				    ctx.moveTo(m[1],m[0]);
+				    ctx.lineTo(m[2],m[0]);
+				    ctx.stroke();
+				    ctx.restore();
+				}	
+
+				for(var i=0; i<matrixHorizen.length;i++){
+					var m = matrixHorizen[i];
+				    ctx.save();
+				    ctx.lineWidth = 0.5;
+				    ctx.strokeStyle = "#8D8D8D";
+				    ctx.setLineDash([1,1]);
+				    ctx.beginPath();
+				    ctx.moveTo(m[0],m[1]);
+				    ctx.lineTo(m[0],m[2]);
+				    ctx.stroke();
+				    ctx.restore();
+				}
+				
+			}
+
+
+
+			  var verticalLines = [],
+			      horizontalLines = [], movingstate=false;
+
+			  canvas.on('mouse:down', function () {
+			    viewportTransform = canvas.viewportTransform;
+			    zoom = canvas.getZoom();
+			    param = _this.calMoveParam();
+			    movingstate = true;
+			    var matrixData = createMatrixData();
+			    matrixHorizen = matrixData.matrixHorizen;
+			    matrixVertical = matrixData.matrixVertical;
+			  });
+
+			  canvas.on('object:moving', function(e) {
+			  	if(movingstate){
+			  		createGuideLine(e);
+			  	}
+			  });
+
+			  canvas.on('object:scaling', function(e) {
+			  	if(movingstate){
+			  		createGuideLine(e, true);
+			  	}
+			  });
+
+			  canvas.on('before:render', function() {
+			    canvas.clearContext(canvas.contextTop);
+			  });
+
+			  canvas.on('after:render', function() {
+			    for (var i = verticalLines.length; i--; ) {
+			      drawVerticalLine(verticalLines[i]);
+			    }
+			    for (var i = horizontalLines.length; i--; ) {
+			      drawHorizontalLine(horizontalLines[i]);
+			    }
+
+			    verticalLines.length = horizontalLines.length = 0;
+
+			    drawMatrix();
+			  });
+
+			  canvas.on('mouse:up', function() {
+			    verticalLines.length = horizontalLines.length = 0;
+			    movingstate = false;
+			    canvas.renderAll();
+			  });
+		}
+
+    }
+  }
+</script>
+
+<style lang="scss" scoped>
+	@import '../assets/common.scss';
+	$animationDuration: 0.5s;
+	@import "../assets/animation/vue2-animate.scss";
+
+	$topBarColor: #FAFAFA;
+	$leftBarColor: #fff;
+	$rightBarColor: #fff;
+
+	$painColor: #F2F2F2;
+
+	//定义初始化布局
+	%position {
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom:0;
+		padding: 0;
+		margin: 0;
+	}
+
+	%border {
+		border-left-color:#E4E4E4;
+		border-left-style:solid;
+		border-left-width:0px;
+
+		border-right-color:#E4E4E4;
+		border-right-style:solid;
+		border-right-width:0px;
+
+		border-top-color:#E4E4E4;
+		border-top-style:solid;
+		border-top-width:0px;
+
+		border-bottom-color:#E4E4E4;
+		border-bottom-style:solid;
+		border-bottom-width:0px;
+	}
+
+	%userSelectNo{
+		user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		-moz-user-select: none;
+	}
+
+	//整体
+	.sh-point {
+		@extend %position;
+
+		.sh-top {
+			@extend %position;
+
+			bottom:auto;
+			background: $topBarColor;
+			height: 49px;
+
+			@extend %border;
+			border-bottom-width:1px;
+		}
+
+		.sh-bottom {
+			@extend %position;
+
+			top:50px;
+
+			.sh-left {
+				@extend %position;
+
+				width: calc(14.3% - 1px);
+
+				background: $leftBarColor;
+
+				@extend %border;
+				border-right-width:1px;
+			}
+
+			.sh-mid {
+				@extend %position;
+
+				left: 14.3%;
+				right: 18.9%;
+				background-color: $painColor;
+				//background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAIAAADZF8uwAAAAGUlEQVQYV2M4gwH+YwCGIasIUwhT25BVBADtzYNYrHvv4gAAAABJRU5ErkJggg==");
+
+				canvas {
+					position:absolute;
+					width: 100%;
+					height: 100%;
+				}
+
+				.sh-mid-scroll {
+					@extend %position;
+
+					scrollbar-base-color: #FFFFFF;
+				    scrollbar-track-color: #E7E7E7;
+				    scrollbar-darkshadow-color: #FFFFFF;
+				    scrollbar-3dlight-color: #FFFFFF;
+				    scrollbar-arrow-color: #757778;
+				    scrollbar-shadow-color: #BEC1C4;
+				    scrollbar-highlight-color: #BEC1C4;
+				    -ms-scroll-chaining: none;
+				    overflow: auto;
+				    opacity: 0.7;
+				    transition: opacity 0.3s;
+
+				    div {
+				    	height: 1px;
+				    	width: 1px;
+				    }
+				}
+
+
+				.sh-mid-scroll::-webkit-scrollbar-track {
+				    background-color: transparent;
+				}
+
+				.sh-mid-scroll::-webkit-scrollbar {
+				    width: 10px;
+				    height: 10px;
+				    background-color: transparent;
+				    /*border:0 none;*/
+				}
+
+				.sh-mid-scroll::-webkit-scrollbar-thumb {
+					transition: background 0.2s;
+				    background: rgba(0,0,0,0.7);
+				    border: 1px solid #f1f1f1;
+				    border-radius: 12px;
+				}
+
+			    .sh-mid-scroll::-webkit-scrollbar-thumb:hover {
+			        background: rgba(0,0,0,0.95);
+			        border: 1px solid #f1f1f1;
+			        border-radius: 12px;
+			    }
+
+				.sh-mid-scrollx {
+					@extend %position;
+
+					bottom:0;
+					top:auto;
+					height: 10px;
+
+					//overflow-x: scroll;
+				}
+
+				.sh-mid-scrollx::-webkit-scrollbar {
+				    width:0px;
+				}
+
+				.sh-mid-scrolly {
+					@extend %position;
+
+					right:0;
+					left:auto;
+					width: 10px;
+
+					//overflow-y: scroll;
+				}
+
+				.sh-mid-scrolly::-webkit-scrollbar {
+				    height: 10px;
+				    width: 10px;
+				    background:transparent;
+				}
+
+				.horizon-guide-trigger{
+					@extend %position;
+					@extend %userSelectNo;
+					top:0px;
+					bottom:auto;
+					height: 20px;
+					z-index: 1;
+					&:hover {
+						background:rgba(0,0,0,0.2);
+						cursor: pointer;
+					}
+				}
+
+				.vertical-guide-trigger{
+					@extend %position;
+					@extend %userSelectNo;
+					left:0px;
+					right:auto;
+					width: 20px;
+					z-index: 1;
+					&:hover {
+						background:rgba(0,0,0,0.2);
+						cursor: pointer;
+					}
+				}
+
+				.horizon-guide-line, .vertical-guide-line{
+					@extend %position;
+					@extend %userSelectNo;
+					background:#FFC82F;
+					z-index: 2;
+				}
+
+				.horizon-guide-line{
+					top:0px;
+					bottom:auto;
+					height: 1px;
+				}
+
+				.vertical-guide-line{
+					left:0px;
+					right:auto;
+					width: 1px;
+				}
+			}
+
+			.sh-right {
+				@extend %position;
+
+				left: auto;
+				width: calc(18.9% - 1px);
+				background:$rightBarColor;
+
+				word-break: break-all;
+
+				@extend %border;
+				border-left-width:1px;
+			}
+		}
+	}
+
+</style>

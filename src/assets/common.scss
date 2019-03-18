@@ -1,0 +1,56 @@
+	$animationDuration: 0.5s;
+	@import "../assets/animation/vue2-animate.scss";
+
+	$topBarColor: #FAFAFA;
+	$leftBarColor: #fff;
+	$rightBarColor: #fff;
+
+	$painColor: #F2F2F2;
+
+	//定义初始化布局
+	%position {
+		position: absolute;
+		left: 0;
+		top: 0;
+		right: 0;
+		bottom:0;
+		padding: 0;
+		margin: 0;
+	}
+
+	%border {
+		border-left-color:#E4E4E4;
+		border-left-style:solid;
+		border-left-width:0px;
+
+		border-right-color:#E4E4E4;
+		border-right-style:solid;
+		border-right-width:0px;
+
+		border-top-color:#E4E4E4;
+		border-top-style:solid;
+		border-top-width:0px;
+
+		border-bottom-color:#E4E4E4;
+		border-bottom-style:solid;
+		border-bottom-width:0px;
+	}
+
+	%userSelectNo {
+		user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		-moz-user-select: none;
+	}
+
+	%scrollStyle {
+		scrollbar-base-color: #FFFFFF;
+	    scrollbar-track-color: #E7E7E7;
+	    scrollbar-darkshadow-color: #FFFFFF;
+	    scrollbar-3dlight-color: #FFFFFF;
+	    scrollbar-arrow-color: #757778;
+	    scrollbar-shadow-color: #BEC1C4;
+	    scrollbar-highlight-color: #BEC1C4;
+	    -ms-scroll-chaining: none;
+	    overflow: auto;
+	}

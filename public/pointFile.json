@@ -1,0 +1,1341 @@
+
+{
+//一个幻灯片文件
+    "slideId":"2334234", //幻灯片ID
+    "slideCode":"XeChde", //幻灯片的短链接http://www.dd.com/XeChde
+    "slideName": "年终表彰", //文件名、幻灯片名称
+    "slideType": 11, //幻灯片分类，在后台建立数据字典表，分大类小类
+    "slideTag": "简明|扁平化", //幻灯片标签，用户自定义
+    "slideDesc": "", //文件详细描述、场景内容
+    "thumbnailSrc": "", //场景封面图片地址
+    "playTrigger":0, //翻页触发方式，手机：0滑动、1点击屏幕、2禁止触发翻页(需要自行设置按钮)。电脑:该项无效，按照PPT设置
+    "playType":"", //翻页方式，参考易企秀，上下、左右、
+    "autoPlay":0, //是否自动翻页播放
+    "loopPlay":0, //是否循环播放
+    "banPlayNext":"",//禁止滑动进入下一页，也就是必须点击页面上的按钮进入
+    "userid":"", //用户编号
+    "hasMenu":false, //是否显示底部菜单,
+    "menuItem":["prev","list","next","min","cut"],//底部菜单的功能键
+    "slide_view":"", //点击量
+    "slide_forward":"",//转发量
+    "authType":0, //0、自由查看，1密码访问，2需要登陆，3不允许其他人访问，3选项设置后不允许其他用户访问该场景，除非设置共享编辑和共享演示
+    "authRole":[], //authType为2时，允许访问的用户组
+    //背景音乐设置，可添加多个音乐
+    "music": [
+        {
+            "src":"", //音乐源文件链接
+            "sprite":[4000, 10000], //节选播放，单位是ms，例如从4秒开始，播放10秒
+            "volume":0.5, //音量，1是默认
+            "loop": true, //是否循环播放
+            "rate":1.5, //播放速度，1为默认
+            "fromStart": false, //用户停止播放后再次播放时是否从头开始
+            "fadeInt":0, //毫秒数，默认为0，不进行淡入
+            "fadeOut":0, //毫秒数，默认为0，不进行淡出
+            "autoplay": true, //是否自动播放
+            "nextPlay":false, //设置为自动播放时，用户停止播放后，下次进入幻灯片是否自动播放音乐
+        }
+    ],
+
+    //数据源，由数据库和报表小组确定。大原则：
+    "source":[
+        {
+            "sourceId":"8304932", //数据源ID
+            "sourceName":"分公司业绩20180101", //数据源名称
+            "sourceType":0, //0自定义输入，1系统报表，2数据库表(由管理端配置数据源，可以选择数据源和数据源下的结果表，能够选择表的字段和定义排序规则)，3表单数据（可以采用表单中的数据作为数据源，表单数据源可以做数据透视groupby汇总后再进行添加，表单数据与用户信息进行绑定，如果用户没有权限填写，则表单选项为禁用状态）
+        }
+    ],
+
+    "form":[
+        {
+            "formId":"", //表单ID
+            "formName":"", //表单名称
+            "formSourseId":"", //表单数据源
+            "inputTimes":3, //每个用户的填写次数
+            "isInputDateLimit":false,//是否设置填写周期，如果为是则显示inputDate、isInputPeriod选项
+            "inputDate":["2019-01-01", "2020-01-02"],
+            "isInputPeriod":false,//是否循环周期，如果为是则显示inputPeriodUnit、inputPeriodNum字段。如果开启该字段，则inputTimes的限制变为每个用户在周期内可以填写的次数，比如每天填写1次，每个月填写一次等。
+            "inputPeriodUnit":"",//输入周期的单位，日、月、年、季度、小时、分钟
+            "inputPeriodNum": 1, //根据inputPeriodUnit确定周期，蔽日每1小时、每1天等
+            "isShowLast":false, //如果超期或者超过填写次数是否显示该用户最后的填写结果
+            "formField":[
+                {
+                    "fieldId":"", //字段ID
+                    "fieldName":"", //字段名称
+                    "fieldType":"", //字段数据类型，datetime、time、number、string
+                    "fieldDesc":"", //字段说明
+                    "toolTip":"", //字段提示
+                    "validate":["mail", "IDcard", "phone"], //只接受特定类型值
+                    "required":false, //是否必填
+                    "default": null, //默认值，默认为无
+                    "max":1000,//可输入的最大字符
+                    "min":10, //可输入的最小字符
+                    "preCondition":[//如果某个控件有特定值才显示
+                        {
+                            "fieldId":"1111",//例如与1111id的控件绑定，只有1111的fieldValue值为1时，该选项才显示，否则隐藏。
+                            "fieldValue":"1"
+                        }
+                    ],
+                    "hasAnswer":false, //是否为题目，选择true则出现下面的选项
+                    "answerValue":"", //答案
+                    "isCorrect":"", //是否显示批改
+                    "isAnswer":"", //是否显示答案
+                    "point":10, //得分，支持百分比
+                }
+            ],
+            "isAnswerContain": false, //是否包含题目选项，选择true则出现下面的选项，如果选项中有hasAnswer为true的字段，则自动设置为true
+            "totalPoint":100, //题目总分
+            "totalShow":false, //是否显示获得表单总分
+        }
+    ],
+    "publish":0,//是否发布为模板，默认0否，1为发布
+    "publishStatus":1, //默认0表示正常，1表示审核中，2表示成功发表
+    "publishPoint":100,//其他用户使用该模板需要的点数
+
+    "isDelete": 0, //默认0正常，1为被删除
+    
+    //共享的userid列表，可加入多个用户并限制其权限
+    "ShareUser":[
+        {
+            "shareUserId":"", //用户id
+            "ShareType":0, //共享状态，默认0不共享，1为共享演示，2为共享编辑
+            "SharePoint":[], //具体允许的操作清单
+        }
+    ], 
+
+    "createTime":"", //创建时间
+    "updateTime":"", //最后更新时间
+    "deleTime":"", //删除时间
+    "publishTime":"",//发布时间
+
+    "symbols":[],//元件
+
+    //场景页
+    "page": [{
+        "pageId": "page_shsdsD_23423423",
+        "pageName": "",
+
+        "viewCanvasWidth":375, //画布的宽度，画布为视区中的有效制作区域
+        "viewCanvasHeight":667, //画布的高度
+
+        "viewMatchType":0, //可选的方式，默认为0保持比例拉升（以最接近屏幕比例的方式对画布进行拉伸，不能覆盖的地方留白），1横向拉升（以横向宽度为准进行拉升，如果高度不足则留白，否则出现纵向滚动条），2纵向拉升（以纵向高度为基准进行拉升，如宽度不足则留白，否则出现横向滚动条），3全屏拉升（忽略屏幕比例，强制拉升画布到全屏，会出现比例失衡)，5不拉升（按照画布原始大小显示，如果超出则显示滚动条）
+
+        "axisOn": true, //刻度显示选项
+        "matrixOn": true, //网格线显示
+        "matrixColor": "#8D8D8D", //网格线颜色
+        "matrixBorderStyle": [1,1], //网格线边框样式设置
+        "martixAttach": true, //是否吸附网格线
+
+        "guideLinesAttach": true, //是否吸附到辅助线
+        "guideLinesColor": "#00ffff", //辅助线颜色
+
+        "order":0, //排序
+
+        "pageSwitchType":0, //0正常，1左右滑动
+
+        "timeLine":[
+            {
+                "id":"0",
+                "name":"主时间线",
+                "action":[
+                    {
+                        "id":"action_hasdfasdf_123123",
+                        "time":3000,
+                        "list":[
+                            {
+                                "type":"0",//类别参考actionTypeOptions
+                                
+                                //1
+                                "jump":"",
+                                "pageId":"",
+                                "excess":"",
+                                "time":0,
+
+                                //2
+                                "functionName":"",
+
+                                //3
+                                "behavior": "",
+
+                                //4
+                                "url":"www.baidu.com",
+                                "isBlank":false,
+
+                                //5
+                                "email":"",
+                                "subject":"",
+                                "content":"",
+
+                                //6
+                                "sound":"",
+                                "cycle":false,
+                                // "volume":50,
+                                // "speed":100,
+                                // "fadeIn":[],
+                                // "fadeOut":[],
+                                // "startTime":0,
+                                // "endTime":0,
+
+                                //7
+                                "sound":"",
+
+                                //8 9 10 11
+                                "timeLine":"",
+                                "reverse":false,
+                                "restart":false,
+                                "startTime":0,
+
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id":"timeline_hahah_123123123",
+                "name":"自定义时间线",
+                "action":[
+                    
+                ]
+            },
+
+        ],
+        
+        "objects": [
+        {   
+            //###################以下为canvas组件###########
+            //ms开头的参数为编辑器自定义，每个组件都应该包含ms属性
+            "msItemID":"rect_shendasdf_1239348234", //对应的对象的ID，在一个场景页中唯一。
+            "msType":"normal", //组件类型，某些类型的组件不会在手机端渲染，目前辅助线的类型为：guidelines，其他为normal
+            "mszIndex":0,//组件的z-index叠放层次，因为在fabric中，叠放层次是根据数组中的位置决定，但是存储到数据中，不能频繁更改数组顺序，所以采取专门的参数保存叠放次序。
+            "msName":"矩形",//名称
+            "type": "rect", //组件类型，该类型为fabric中的实体类型，在插入形状的时候就已经决定，不能更改。
+            "originX": "left",//组件的横向对齐方式，可以使left、center、right。无须设置，保持默认即可
+            "originY": "top", //纵向对齐方式，top、center、bottom，保持默认即可
+            "left": 347, //top垂直位置
+            "top": 209,//left水平位置
+            "width": 50,//宽度
+            "height": 50,//高度
+            "fill": "#f21a82",//背景颜色，可以设置纯色、渐变、背景图。设置的方式参考fill的三个例子
+            "fill": {
+                "type": "pattern",
+                "source": "http://fabricjs.com/assets/ladybug.png",//图片背景的地址
+                "repeat": "repeat",//图片背景的平铺方式，默认repeat，水平平铺repeat-x、 垂直平铺repeat-y，不平铺no-repeat
+                "crossOrigin": "",
+                "offsetX": 0,//背景水平偏移
+                "offsetY": 0,//背景垂直偏移
+                "patternTransform": null //图片的矩阵变换，支持宽高和放大缩小
+            }, 
+            "fill": {
+                //渐变固定格式，可以调用最新的gradient-picker组件设置
+                "type": "linear",
+                "coords": {
+                    "x1": 0,
+                    "y1": 0,
+                    "x2": 0,
+                    "y2": 50
+                },
+                "colorStops": [{
+                    "offset": 0,
+                    "color": "rgb(149,25,191)",
+                    "opacity": 1
+                }, {
+                    "offset": 1,
+                    "color": "rgb(15,27,159)",
+                    "opacity": 1
+                }],
+                "offsetX": 0,
+                "offsetY": 0
+            },
+            "stroke": null,//边框颜色，可以设置纯色、渐变、背景图。设置的方式参考fill的三个例子
+            "strokeWidth": 1,//边框粗细
+            "strokeDashArray": null,//边框的虚线设置，数组格式。定义好10个好看的样式，让用户选择就行，暂时不用自定义
+            "strokeLineCap": "butt",//在path组件下才显示该选项，butt（路径两端无样式）、round（路径两端为圆角） 、 square（路径两端为矩形）
+            "strokeDashOffset": 0,//svg选项，暂时没发现用途可不用制作选项
+            "strokeLineJoin": "miter", //边框四个角的类型，有三个选项，默认miter直角、round圆角、bevel斜角
+            "strokeMiterLimit": 4, //svg选项，暂时没发现用途可不用制作选项
+            "scaleX": 1,//组件水平放大或缩小的比例，-1至1，该选项只在图片等具有固定宽高的组件中可以设置，其他组件直接修改宽高即可
+            "scaleY": 1,//组件垂直放大或缩小的比例，-1至1，该选项只在图片等具有固定宽高的组件中可以设置，其他组件直接修改宽高即可
+            "angle": 0,//组件旋转的角度值，例如90° 180°等
+            "flipX": false,//水平翻转
+            "flipY": false,//垂直翻转
+            "opacity": 0.8,//透明度，0-1之间
+            "shadow": {//阴影设置，以下每项都要制作相关功能
+                "color": "rgb(0,0,0)", //阴影颜色
+                "blur": 10,//阴影模糊程度
+                "offsetX": 10,//阴影水平偏移程度
+                "offsetY": 10,//阴影垂直偏移程度 
+                "affectStroke": false //阴影是否影响边框
+            },
+            "visible": true,//是否隐藏组件
+            "clipTo": null,//剪切设置，不需要制作功能
+
+            "fillRule": "nonzero",//默认nonzero、 evenodd。用于指定使用哪一种短发去判断画布上的某区域是否属于该图形的“内部”
+            "paintFirst": "fill",//无需设置
+            "globalCompositeOperation": "source-over",//无需设置
+            "transformMatrix": null,//无需设置
+            "skewX": 0,//组件的水平偏度设置
+            "skewY": 0,//组件的垂直偏度设置
+            "rx": 0,//圆角的水平大小设置
+            "ry": 0,//圆角的垂直大小设置
+
+            //key为timeline的id，0默认为主时间线
+            "animation":{
+                "0":[
+                    {
+                        "property":"path",
+                        "keyframe":[
+                            {
+                                "time": 1000,
+                                "value":[200, 100],
+                            },
+                            {
+                                "time": 3000,
+                                "value":[500, 300],
+                            },
+                        ],
+                        "ani":[
+                            {
+                                "startTime": 1000,
+                                "endTime":3000,
+                                // "startValue":[200, 100],
+                                // "endValue":[500, 300],
+                                "value":[[10,14],[14,20],[18,25]],
+                                "path":"M30 0 L20 50 C30 20",
+                                "ease": "M30 0 L20 50 C30 20",//linear
+                            }
+                        ]
+                    },
+                    {
+                        "property":"left",
+                        "keyframe":[
+                            {
+                                "time": 1000,
+                                "value":200,
+                            },
+                            {
+                                "time": 3000,
+                                "value":500,
+                            },
+                            {
+                                "time": 5000,
+                                "value":200,
+                            },
+                            {
+                                "time": 7000,
+                                "value":100,
+                            },
+                            {
+                                "time": 10000,
+                                "value":400,
+                            },
+                        ],
+                        "ani":[
+                            {
+                                "startTime": 1000,
+                                "endTime":3000,
+                                "startValue":200,
+                                "endValue":500,
+                                "ease": "easeOutBounce",//linear
+                            },
+                            {
+                                "startTime": 3000,
+                                "endTime":5000,
+                                "startValue":500,
+                                "endValue":200,
+                                "ease": "easeOutBounce",//linear
+                            }
+                            ,
+                            {
+                                "startTime": 5000,
+                                "endTime":7000,
+                                "startValue":200,
+                                "endValue":100,
+                                "ease": "easeOutBounce",//linear
+                            }
+                            ,
+                            {
+                                "startTime": 7000,
+                                "endTime":10000,
+                                "startValue":100,
+                                "endValue":400,
+                                "ease": "easeOutBounce",//linear
+                            }
+                        ]
+                    },
+                    {
+                        "property":"top",
+                        "keyframe":[
+                            {
+                                "time": 1000,
+                                "value":200,
+                            },
+                            {
+                                "time": 3000,
+                                "value":500,
+                            },
+                        ],
+                        "ani":[
+                            {
+                                "startTime": 1000,
+                                "endTime":3000,
+                                "startValue":200,
+                                "endValue":500,
+                                "ease": "easeOutBounce",//linear
+                            }
+                        ]
+                    },
+                    {
+                        "property":"rotate",
+                        "keyframe":[
+                            {
+                                "time": 2500,
+                                "value":0,
+                            },
+                            {
+                                "time": 6000,
+                                "value":180,
+                            },
+                        ],
+                        "ani":[
+                            {
+                                "startTime": 2500,
+                                "endTime":6000,
+                                "startValue":0,
+                                "endValue":180,
+                                "ease": "easeInOutQuad",//linear
+                            }
+                        ]
+                    },
+                ],
+                
+            },
+
+            // "animation":
+            // {
+            //     "0":[
+            //         {
+            //             "property":"x",
+            //             "startTime": 1000,
+            //             "endTime":3000,
+            //             "startValue":200,
+            //             "endValue":500,
+            //             "ease": "easeOutBounce",//linear
+            //             "timeLineId":"0",
+            //         },
+            //         {
+            //             "property":"y",
+            //             "startTime": 1000,
+            //             "endTime":3000,
+            //             "startValue":200,
+            //             "endValue":500,
+            //             "ease": "easeOutBounce",//linear
+            //             "timeLineId":"0",
+            //         },
+            //         {
+            //             "property":"rotate",
+            //             "startTime": 2500,
+            //             "endTime":6000,
+            //             "startValue":0,
+            //             "endValue":180,
+            //             "ease": "easeInOutQuad",//linear
+            //             "timeLineId":"0",
+            //         },
+            //     ],
+            // },
+
+            //以下组件无需设置
+            "backgroundColor": "",
+            "overlayFill": null,
+            "selectable": true,
+	        "hasControls": true,
+	        "hasBorders": true,
+	        "hasRotatingPoint": false,
+	        "transparentCorners": true,
+	        "perPixelTargetFind": false,
+        }, 
+        {
+            "mszIndex":1,
+            "msItemID":"ellipse_shendouoi_1239348234",
+            "msName":"圆形",//名称
+            "type": "ellipse",//圆形
+            "objID":"ellipse_shendasdf_1239348234",
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            "left": 559,
+            "top": 86,
+            "width": 100,
+            "height": 100,
+            "fill": "#5831be",
+            "stroke": null,
+            "strokeWidth": 1,
+            "strokeDashArray": null,
+            "strokeLineCap": "butt",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "miter",
+            "strokeMiterLimit": 4,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": 0,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 0.8,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0,
+            "rx": 50,//半径大小，px
+            "ry":50,
+            "startAngle": 0,//圆开始角度，配合endAngle可以制作小月牙儿，px
+            "endAngle": 6.283185307179586//圆结束角度，px
+        }, 
+        {
+            "mszIndex":2,
+            "msItemID":"triangle_shendasdfasdf_1239348234",
+            "msName":"三角形",//名称
+            "type": "triangle",//三角形
+            "objID":"triangle_shendasdf_1239348234",
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            "left": 448,
+            "top": 355,
+            "width": 50,
+            "height": 50,
+            "fill": "#a7e8ae",
+            "stroke": null,
+            "strokeWidth": 1,
+            "strokeDashArray": null,
+            "strokeLineCap": "butt",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "miter",
+            "strokeMiterLimit": 4,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": 0,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 0.8,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0
+        }, 
+        {
+            "mszIndex":3,
+            "msItemID":"msLine_shendasdff_1239348234",
+            "msName":"直线",//名称
+            "type": "msLine",//线设置
+            "objID":"line_shendasdf_1239348234",
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            // "left": 186,
+            // "top": 430,
+            // "width": 150,
+            // "height": 100,
+            "fill": "rgb(0,0,0)",
+            "stroke": "#9526d7",
+            "strokeWidth": 1,
+            "strokeDashArray": null,
+            "strokeLineCap": "butt",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "miter",
+            "strokeMiterLimit": 4,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": 0,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 1,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0,
+
+            //以下无需设置
+            "x1": -75,
+            "x2": 75,
+            "y1": -50,
+            "y2": 50,
+
+        }, 
+        {
+            //多边形填充组件
+            
+            "mszIndex":4,
+            "msItemID":"polygon_urewdasdff_1239348234",
+            "msName":"多边形",//名称
+            "type": "polygon",
+            "objID":"polygon_shendasdf_1239348234",
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            "left": 138,
+            "top": 149,
+            "width": 385,
+            "height": 245,
+            "fill": "#55b940",
+            "stroke": null,
+            "strokeWidth": 1,
+            "strokeDashArray": null,
+            "strokeLineCap": "butt",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "miter",
+            "strokeMiterLimit": 4,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": 0,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 1,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0,
+             //连接点的定义
+            "points": [{
+                "x": 185,
+                "y": 0
+            }, {
+                "x": 250,
+                "y": 100
+            }, {
+                "x": 385,
+                "y": 170
+            }, {
+                "x": 0,
+                "y": 245
+            }]
+        }, 
+        {
+            //多边形描边组件，不会自动封口
+
+            "mszIndex":5,
+            "msItemID":"polyline_urytterwwff_12122134",
+            "msName":"多边形描边",//名称
+            "type": "polyline",
+            "objID":"polyline_shendasdf_1239348234",
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            "left": 138,
+            "top": 149,
+            "width": 385,
+            "height": 245,
+            "fill": null,
+            "stroke": "#55b940",
+            "strokeWidth": 3,
+            "strokeDashArray": null,
+            "strokeLineCap": "butt",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "miter",
+            "strokeMiterLimit": 4,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": 0,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 1,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0,
+            //连接点的定义
+            "points": [{
+                "x": 185,
+                "y": 0
+            }, {
+                "x": 250,
+                "y": 100
+            }, {
+                "x": 385,
+                "y": 170
+            }, {
+                "x": 0,
+                "y": 245
+            }],
+            "perPixelTargetFind" :false,
+        }, 
+        {
+            "mszIndex":6,
+            "msItemID":"msImage_urweqwff_41213",
+            "msName":"图片",//名称
+            "type": "msImage",//图片组件
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            "left": 255,
+            "top": 37,
+            "width": 128,
+            "height": 134,
+            "fill": "rgb(0,0,0)",
+            "stroke": null,
+            "strokeWidth": 0,
+            "strokeDashArray": null,
+            "strokeLineCap": "butt",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "miter",
+            "strokeMiterLimit": 4,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": -10,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 1,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0,
+            "crossOrigin": "",
+            "cropX": 0, //图片水平偏移位置
+            "cropY": 0,//图片垂直偏移位置
+            "src": "bug.png",//图片应用地址
+            "filters": [{//图片滤镜设置
+	            "type": "Invert",
+	            "invert": true
+	        }],
+
+        },
+        {
+
+            "mszIndex":7,
+            "msItemID":"path_uwasdfasdf_41123213",
+            "msName":"路径",//名称
+            "type": "path",//路径设置，与svg文件读取相同
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            "left": 74.5,
+            "top": 50.5,
+            "width": 569,
+            "height": 385,
+            "fill": null,
+            "stroke": "rgb(0, 0, 0)",
+            "strokeWidth": 1,
+            "strokeDashArray": null,
+            "strokeLineCap": "round",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "round",
+            "strokeMiterLimit": 10,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": 0,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 1,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0,
+            //与svg兼容的路径配置
+            "path": [
+                ["M", 229.001, 101],
+                ["Q", 229, 101, 227.5, 101],
+                ["Q", 226, 101, 222.5, 104],
+                ["Q", 219, 107, 214.5, 110.5],
+                ["Q", 210, 114, 207, 117],
+                ["Q", 204, 120, 201, 124.5],
+                ["Q", 198, 129, 195, 135],
+                ["Q", 192, 141, 188, 148.5],
+                ["Q", 184, 156, 182, 163],
+                ["Q", 180, 170, 178, 177.5],
+                ["Q", 176, 185, 175.5, 197.5]
+            ],
+            "perPixelTargetFind" :false,
+        },
+        {
+            //内容自适应文本框配置，不能拉伸高度，调整宽度后内容会跟着换行变化
+		    "mszIndex":8,
+            "msItemID":"textbox_uwasd1asdf_41231",
+            "msName":"文本框",//名称
+            "type": "textbox",
+		    "version": "2.4.6",
+		    "originX": "left",
+		    "originY": "top",
+		    "left": 161.01,
+		    "top": 223.48,
+		    "width": 300,
+		    "height": 48.82,
+		    "fill": "#d7b26a",
+		    "stroke": null,
+		    "strokeWidth": 1,
+		    "strokeDashArray": null,
+		    "strokeLineCap": "butt",
+		    "strokeDashOffset": 0,
+		    "strokeLineJoin": "miter",
+		    "strokeMiterLimit": 4,
+		    "scaleX": 1,
+		    "scaleY": 1,
+		    "angle": 356.5,
+		    "flipX": false,
+		    "flipY": false,
+		    "opacity": 1,
+		    "shadow": null,
+		    "visible": true,
+		    "clipTo": null,
+		    "backgroundColor": "",
+		    "fillRule": "nonzero",
+		    "paintFirst": "fill",
+		    "globalCompositeOperation": "source-over",
+		    "transformMatrix": null,
+		    "skewX": 0,
+		    "skewY": 0,
+		    "text": "Lorem ipsum dolor sit amet, consectetur adipisicing elit,",//文本内容
+		    "fontSize": 20,//字号
+		    "fontWeight": "",//加粗，默认normal，bold加粗
+		    "fontFamily": "helvetica",//字体
+		    "fontStyle": "normal",//文字样式，默认normal，italic斜体
+		    "lineHeight": 1.16,//行间距
+		    "underline": false,//下划线
+		    "overline": false,//顶部线
+		    "linethrough": false,//删除线
+		    "textAlign": "left",//文字对比方式，默认left， "left", "center", "right", "justify", "justify-left", "justify-center" ， "justify-right".
+		    "textBackgroundColor": "",//文字背景
+		    "charSpacing": 0,//字间距
+
+            //以下不需要设置
+		    "minWidth": 20,//最小宽度，不需要做成选项
+		    "styles": {}, //每个字的样式表，不需要做成选项
+            "perPixelTargetFind" :false,
+		},
+        {
+            //可变文本框配置，可以对文字进行拉升，制作特殊样式文字
+
+            "mszIndex":9,
+            "msItemID":"itext_werwqesdf_41231231",
+            "msName":"可变文本框",//名称
+		    "type": "i-text",
+		    "originX": "left",
+		    "originY": "top",
+		    "left": 51,
+		    "top": 282,
+		    "width": 230.05,
+		    "height": 235.94,
+		    "fill": "#333",
+		    "stroke": null,
+		    "strokeWidth": 1,
+		    "strokeDashArray": null,
+		    "strokeLineCap": "butt",
+		    "strokeLineJoin": "miter",
+		    "strokeMiterLimit": 10,
+		    "scaleX": 1,
+		    "scaleY": 1,
+		    "angle": 0,
+		    "flipX": false,
+		    "flipY": false,
+		    "opacity": 1,
+		    "shadow": null,
+		    "visible": true,
+		    "clipTo": null,
+		    "backgroundColor": "",
+		    "fillRule": "nonzero",
+		    "globalCompositeOperation": "source-over",
+		    "transformMatrix": null,
+		    "skewX": 0,
+		    "skewY": 0,
+		    "text": "lorem ipsum dolor sit Amet consectetur",
+		    "fontSize": 40,
+		    "fontWeight": "normal",
+		    "fontFamily": "Helvetica",
+		    "fontStyle": "",
+		    "lineHeight": 1.16,
+		    "textDecoration": "",
+		    "textAlign": "left",
+		    "textBackgroundColor": "",
+		    "styles": {
+		        "0": {
+		            "0": {
+		                "fill": "red",
+		                "fontSize": 20,
+		                "fontFamily": "Helvetica",
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            },
+		            "1": {
+		                "fill": "red",
+		                "fontSize": 30,
+		                "fontFamily": "Helvetica",
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            },
+		            "2": {
+		                "fill": "red",
+		                "fontSize": 40,
+		                "fontFamily": "Helvetica",
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            },
+		            "3": {
+		                "fill": "red",
+		                "fontSize": 50,
+		                "fontFamily": "Helvetica",
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            },
+		            "4": {
+		                "fill": "red",
+		                "fontSize": 60,
+		                "fontFamily": "Helvetica",
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            },
+		            "6": {
+		                "textBackgroundColor": "yellow"
+		            },
+		            "7": {
+		                "textBackgroundColor": "yellow"
+		            },
+		            "8": {
+		                "textBackgroundColor": "yellow"
+		            },
+		            "9": {
+		                "textBackgroundColor": "yellow",
+		                "fontFamily": "Helvetica",
+		                "fontSize": 40,
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            }
+		        },
+		        "1": {
+		            "0": {
+		                "textDecoration": "underline"
+		            },
+		            "1": {
+		                "textDecoration": "underline",
+		                "fontFamily": "Helvetica",
+		                "fontSize": 40,
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            },
+		            "2": {
+		                "fill": "green",
+		                "fontStyle": "italic",
+		                "textDecoration": "underline"
+		            },
+		            "3": {
+		                "fill": "green",
+		                "fontStyle": "italic",
+		                "textDecoration": "underline"
+		            },
+		            "4": {
+		                "fill": "green",
+		                "fontStyle": "italic",
+		                "textDecoration": "underline",
+		                "fontFamily": "Helvetica",
+		                "fontSize": 40,
+		                "fontWeight": "normal"
+		            }
+		        },
+		        "2": {
+		            "0": {
+		                "fill": "blue",
+		                "fontWeight": "bold"
+		            },
+		            "1": {
+		                "fill": "blue",
+		                "fontWeight": "bold"
+		            },
+		            "2": {
+		                "fill": "blue",
+		                "fontWeight": "bold",
+		                "fontFamily": "Helvetica",
+		                "fontSize": 40,
+		                "fontStyle": ""
+		            },
+		            "4": {
+		                "fontFamily": "Courier",
+		                "textDecoration": "line-through"
+		            },
+		            "5": {
+		                "fontFamily": "Courier",
+		                "textDecoration": "line-through"
+		            },
+		            "6": {
+		                "fontFamily": "Courier",
+		                "textDecoration": "line-through"
+		            },
+		            "7": {
+		                "fontFamily": "Courier",
+		                "textDecoration": "line-through",
+		                "fontSize": 40,
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            }
+		        },
+		        "3": {
+		            "0": {
+		                "fontFamily": "Impact",
+		                "fill": "#666",
+		                "textDecoration": "line-through"
+		            },
+		            "1": {
+		                "fontFamily": "Impact",
+		                "fill": "#666",
+		                "textDecoration": "line-through"
+		            },
+		            "2": {
+		                "fontFamily": "Impact",
+		                "fill": "#666",
+		                "textDecoration": "line-through"
+		            },
+		            "3": {
+		                "fontFamily": "Impact",
+		                "fill": "#666",
+		                "textDecoration": "line-through"
+		            },
+		            "4": {
+		                "fontFamily": "Impact",
+		                "fill": "#666",
+		                "textDecoration": "line-through",
+		                "fontSize": 40,
+		                "fontWeight": "normal",
+		                "fontStyle": ""
+		            }
+		        }
+		    },
+            "perPixelTargetFind" :false,
+		},
+        {
+            "mszIndex":10,
+            "msItemID":"group_weasdfasdff_41231231",
+            "msName":"组合",//名称
+            "type": "group",//组合组件，可包含其他组件，可进行放大缩小等常规操作
+            "version": "2.4.6",
+            "originX": "left",
+            "originY": "top",
+            "left": 178.5,
+            "top": 107.5,
+            "width": 112.5,
+            "height": 73,
+            "fill": "rgb(0,0,0)",
+            "stroke": null,
+            "strokeWidth": 0,
+            "strokeDashArray": null,
+            "strokeLineCap": "butt",
+            "strokeDashOffset": 0,
+            "strokeLineJoin": "miter",
+            "strokeMiterLimit": 4,
+            "scaleX": 1,
+            "scaleY": 1,
+            "angle": 0,
+            "flipX": false,
+            "flipY": false,
+            "opacity": 1,
+            "shadow": null,
+            "visible": true,
+            "clipTo": null,
+            "backgroundColor": "",
+            "fillRule": "nonzero",
+            "paintFirst": "fill",
+            "globalCompositeOperation": "source-over",
+            "transformMatrix": null,
+            "skewX": 0,
+            "skewY": 0,
+            "objects": [{
+                "msItemID":"circle_souoi_1239348234",
+                "type": "circle",
+                "msName":"圆形",//名称
+                "version": "2.4.6",
+                "originX": "center",
+                "originY": "center",
+                "left": -23.75,
+                "top": 0,
+                "width": 42,
+                "height": 42,
+                "fill": "rgba(255,255,0,0.53)",
+                "stroke": null,
+                "strokeWidth": 1,
+                "strokeDashArray": null,
+                "strokeLineCap": "butt",
+                "strokeDashOffset": 0,
+                "strokeLineJoin": "miter",
+                "strokeMiterLimit": 4,
+                "scaleX": 1,
+                "scaleY": 1,
+                "angle": 0,
+                "flipX": false,
+                "flipY": false,
+                "opacity": 1,
+                "shadow": {
+                    "color": "rgb(0,0,0)",
+                    "blur": 10,
+                    "offsetX": 10,
+                    "offsetY": 10,
+                    "affectStroke": false
+                },
+                "visible": true,
+                "clipTo": null,
+                "backgroundColor": "",
+                "fillRule": "nonzero",
+                "paintFirst": "fill",
+                "globalCompositeOperation": "source-over",
+                "transformMatrix": null,
+                "skewX": 0,
+                "skewY": 0,
+                "radius": 21,
+                "startAngle": 0,
+                "endAngle": 6.283185307179586
+            }, {
+                "msItemID":"circle_xouddoi_1239348234",
+                "type": "circle",
+                "msName":"圆形",//名称
+                "version": "2.4.6",
+                "originX": "center",
+                "originY": "center",
+                "left": -19.75,
+                "top": 0,
+                "width": 72,
+                "height": 72,
+                "fill": "rgba(255,255,0,0.31)",
+                "stroke": null,
+                "strokeWidth": 1,
+                "strokeDashArray": null,
+                "strokeLineCap": "butt",
+                "strokeDashOffset": 0,
+                "strokeLineJoin": "miter",
+                "strokeMiterLimit": 4,
+                "scaleX": 1,
+                "scaleY": 1,
+                "angle": 0,
+                "flipX": false,
+                "flipY": false,
+                "opacity": 1,
+                "shadow": {
+                    "color": "rgb(0,0,0)",
+                    "blur": 10,
+                    "offsetX": 10,
+                    "offsetY": 10,
+                    "affectStroke": false
+                },
+                "visible": true,
+                "clipTo": null,
+                "backgroundColor": "",
+                "fillRule": "nonzero",
+                "paintFirst": "fill",
+                "globalCompositeOperation": "source-over",
+                "transformMatrix": null,
+                "skewX": 0,
+                "skewY": 0,
+                "radius": 36,
+                "startAngle": 0,
+                "endAngle": 6.283185307179586
+            }]
+        },
+        {
+            "msItemID":"list_shendasdf_1239348234", //列表组件
+            "msType":"list", 
+            "msName":"列表",//名称
+            "mszIndex":0, 
+
+            //同rect设置
+
+            "linkObjects":[
+
+            ]
+        },
+
+
+        //###################以下为DOM组件###########
+        {   
+            "msItemID":"table_shendasdf_1239348234", 
+            "msType":"table", 
+            "mszIndex":11,
+            "msName":"报表",//名称
+
+            //以下设置为原有表格的设置
+            "borderColor": "rgba(253,222,94,0.5)",
+            "borderSize": 1,
+            "paddingTopBottom": 10,
+            "paddingLeftRight": 3,
+            "borderStyle": "solid",
+            "enableRowBorder": true,
+            "enableColumnBorder": true,
+
+            "isShowtime": true,
+            "commonColumnSetting": {
+                "unit": "",
+                "accuracy": 0,
+                "width":"auto"
+            },
+            "columnSetting": {
+                "0": {
+                    "unit": "",//单位后缀，默认为空，可以设置任意后缀
+                    "accuracy": 0,//保留小数位数，默认auto，自动计算
+                    "width":"auto",//列固定宽度，默认自动计算
+                    "order":0 //列排序，可以调整列的显示顺序
+                },
+            },
+            "isSort": true,
+            "rowTitle": 1,
+            "tailFreezen": true,
+            "isScreenshot": true,
+            "type": "fullscreen",
+            "enableCondition": true,
+            "similarTitleCss": true,
+            "borderImageSource": "",
+            "rowFreezen": true,
+            "isSearch": true,
+            "tableBorderType": "normal",
+            "tailTitle": 1,
+            "isFilter": false,
+            "tailSimilarTitleCss": true,
+            "borderImageOutset": 1,
+            "columnTitle": 1,
+            "isRowNum": false,
+            "columnFreezen": true,
+            "borderImageRepeat": "round",
+
+            "source_id":888121, //数据源的id,通过数据源可以选择数据范围
+            "rangeArray":{
+                "table12":{//行标题
+                    "range":{"row":[], "column":[]}, 
+                    "backgroundColor": "rgba(204,28,17,0.3)",
+                    "color": "#ffeeda",
+                    "textAlign": "center",
+                    "oddBackgroundColor": "#fafafa",
+                    "evenBackgroundColor": "#ffffff",
+                    "textDecoration": "normal",
+                    "fontStyle": "normal",
+                    "oddColor": "#666666",
+                    "evenColor": "#666666",
+                    "fontFamily": "WAp3ok",
+                    "enableAlter": false,
+                    "fontSize": "12px",
+                    "fontWeight": "normal"
+                },
+                "table5":{//左列标题，内容同上
+
+                },
+                "table6":{//内容，内容同上
+
+                },
+                "table34":{//尾标题，内容同上
+
+                }
+            },
+
+            "type": "rect", //组件类型，该类型为fabric中的实体类型，在插入形状的时候就已经决定，不能更改。
+            "originX": "left",//组件的横向对齐方式，可以使left、center、right。无须设置，保持默认即可
+            "originY": "top", //纵向对齐方式，top、center、bottom，保持默认即可
+            "left": 347, //top垂直位置
+            "top": 209,//left水平位置
+            "width": 50,//宽度
+            "height": 50,//高度
+            "fill": "#f21a82"
+        },
+
+        {   
+            "msItemID":"chart_shendasdf_1239348234", 
+            "msType":"chart", 
+            "mszIndex":12,
+            "msName":"图表",//名称
+
+            //图表类型设置集合
+            "chartAllType": "echarts|line|default",
+            //图表皮肤
+            "chartTheme": "default",
+            //图表配置
+            "defaultOption": {},
+            //首列是否标题
+            "rangeColCheck": false,
+            //首行是否标题
+            "rangeRowCheck": false,
+            //是否转置
+            "rangeConfigCheck": false,
+            //数据范围
+            "rangeTxt": "A1:A2",
+
+            //数据范围的数组表示
+            "rangeArray": [],
+
+            //rangeTxt生成的图表数据
+            "chartData": [],
+            //预处理数据
+            "chartDataCache": {},
+            //series数据顺序
+            "chartDataSeriesOrder": {},
+            //通过数据范围计算的sheet索引
+            "dataSheetIndex": 0,
+
+            //图表id，根据generateRandomKey方法随机生成
+            "chart_id": null,
+
+
+            "source_id": "8304932", //数据源的id,通过数据源可以选择数据范围
+
+
+
+            "type": "rect", //组件类型，该类型为fabric中的实体类型，在插入形状的时候就已经决定，不能更改。
+            "originX": "left",//组件的横向对齐方式，可以使left、center、right。无须设置，保持默认即可
+            "originY": "top", //纵向对齐方式，top、center、bottom，保持默认即可
+            "left": 347, //top垂直位置
+            "top": 209,//left水平位置
+            "width": 50,//宽度
+            "height": 50,//高度
+            "fill": "#f21a82"
+        },
+
+        {
+            "msItemID":"form_select_shendasdf_1239348234", 
+            "msType":"select", //把elementUI中的form控件全部搬过来。设置参考element官网
+            "mszIndex":13,
+            "msName":"下拉列表",//名称
+
+            "type": "rect", //组件类型，该类型为fabric中的实体类型，在插入形状的时候就已经决定，不能更改。
+            "originX": "left",//组件的横向对齐方式，可以使left、center、right。无须设置，保持默认即可
+            "originY": "top", //纵向对齐方式，top、center、bottom，保持默认即可
+            "left": 347, //top垂直位置
+            "top": 209,//left水平位置
+            "width": 50,//宽度
+            "height": 50,//高度
+            "fill": "#f21a82"
+
+
+            //fabric对象部分与rect一致，mpoints采用dom与fabric对象联动的方式进行。所以渲染dom对象的时候，也要同时渲染并绑定一个fabric对象，以此来控制元素的放大缩小、拖动
+        }
+
+        ]
+    }]
+}
